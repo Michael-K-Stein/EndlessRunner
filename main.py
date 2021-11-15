@@ -5,7 +5,9 @@ from math import pi, sin, cos
 from direct.actor.Actor import Actor
 from panda3d.core import ClockObject
 
-timer = ClockObject()
+BIRD_SPAWN_INTERVAL_SECONDS = 3
+
+bird_spawner_timer = ClockObject()
 
 class EndlessRunner(ShowBase):
     def __init__(self):
@@ -24,8 +26,8 @@ class EndlessRunner(ShowBase):
         # Camera setup
         self.taskMgr.add(self.setup_camera, "SetupCamera")
 
-        # Spawn bird
-        self.accept("space", self.spawn_bird, ["fire", 1])
+        # Spawn birds
+        self.taskMgr.add(self.bird_spawner, "BirdSpawner")
 
         # Game loop
         self.taskMgr.add(self.game_loop, "GameLoop")
@@ -33,10 +35,24 @@ class EndlessRunner(ShowBase):
     def game_loop(self, task):
         for bird in self.birds:
             bird.setPos(bird, -0.2, 0, 0)
-
+       
         return Task.cont
 
-    def spawn_bird(self, key, val):
+    
+    def bird_spawner(self, task):
+        if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
+            self.spawn_bird()
+            bird_spawner_timer.reset()
+        return Task.cont
+
+
+    def setupCamera(self, task):
+        self.camera.setHpr(90, 0, 0)
+        return Task.cont
+
+    # spawn a bird
+    def spawn_bird(self):
+        print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(self.scene)
         bird.setPos(0, 0, -100)
