@@ -10,11 +10,15 @@ from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
 
+from player import Player
+
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
 TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 BIRD_SPAWN_INTERVAL_SECONDS = 3
+
+RALPH_POSITION_MULTIPLIER = 0.05
 
 bird_spawner_timer = ClockObject()
 
@@ -62,12 +66,34 @@ class DinoRender(ShowBase):
         self.initRalph()
         self.contTunnel()
 
+        self.accept("space", self.jump)
+        self.accept("lshift", self.tuck)
+        self.accept("rshift", self.tucknt)
+
+        self.player = Player(self.set_ralph_pos)
+        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        
+
+    def jump(self):
+        self.player.jump()
+    def tuck(self):
+        #self.player.tuck()
+        self.ralph.setScale(0.15,0.15,0.15*0.5)
+    def tucknt(self):
+        self.ralph.setScale(0.15,0.15,0.15)
+
     def game_loop(self, task):
+        
+        self.player.update(globalClock.getDt())
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
             bird.setPos(bird, -1.5, 0, -0.1)
         return Task.cont
+
+    def set_ralph_pos(self, x, y):
+        #print(x,y)
+        self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
 
     # Code to initialize the tunnel
     def initTunnel(self):
