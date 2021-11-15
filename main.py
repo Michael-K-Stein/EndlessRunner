@@ -143,7 +143,6 @@ class DinoRender(ShowBase):
             self.ralph_rot_multiplier = -0.5
         self.ralph_base_y = self.ralph.getY()
         self.ralph_base_x = self.ralph.getX()
-        self.ralph_rot_multiplier = 0
 
     def jump(self, key, value):
         self.ralph.setPos(self.ralph, 0, 0, 2)
