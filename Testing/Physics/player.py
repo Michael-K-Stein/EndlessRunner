@@ -15,7 +15,7 @@ class Player_PositionY_Modes(Enum):
     TUCKED = 2
 
 class Player_PositionX_Modes(Enum):
-    DEFAULT = 0
+    CENTRE = 0
     LEFT = 1
     RIGHT = 2
 
@@ -54,6 +54,9 @@ class Player:
                 self.pos_world_y = physics_world_jump_function(transition_move_counter, 0, JUMP_V0_FORCE, GRAVITY_FORCE)
             else:
                 self.pos_world_y += ((self.pos_world_y - self.target_location_y)/abs(self.pos_world_y - self.target_location_y))
+        if pos_world_x != target_location_x:
+            self.pos_world_x += ((self.pos_world_x - self.target_location_x)/abs(self.pos_world_x - self.target_location_x))
+        self.post_location()
 
     def physics_world_jump_function(self,time:int, y_0:float, v_0:float, a:float):
         return y_0 + (v_0*time) + ((a*pow(time,2))/2)
@@ -62,7 +65,7 @@ class Player:
         if self.pos_y != Player_PositionY_Modes.JUMPED:
             #self.pos_world_y += self.screen_block_heights
             self.pos_y = Player_PositionY_Modes.JUMPED
-            self.target_location_y = 2*self.screen_block_heights
+            self.target_location_y = self.screen_block_heights
             logging.debug('INFO : \t\tPLAYER : jump : ')
         else:
             logging.debug('WARNING : \t\tPLAYER : jump : Player tried to jump while midair! WTF.👺')
@@ -71,10 +74,34 @@ class Player:
         if self.pos_x != Player_PositionX_Modes.TUCKED:
             #self.pos_world_y -= self.screen_block_heights
             self.pos_y = Player_PositionY_Modes.TUCKED
-            self.target_location_y = 0
+            self.target_location_y = -self.screen_block_heights
             logging.debug('INFO : \t\tPLAYER : tuck : ')
         else:
             logging.debug('WARNING : \t\tPLAYER : tuck : Player tried to tuck while already tucked!')
 
-    def post_location():
+    def tucknt(self):
+        if self.pos_y != Player_PositionY_Modes.DEFAULT:
+            self.target_location_y = 0
+            self.pos_y = Player_PositionY_Modes.DEFAULT
+            logging.debug('INFO : \t\tPLAYER : tucknt : ')
+        else:
+            logging.debug('WARNING : \t\tPLAYER : tucknt : Player said they are not longer tucked, but they weren\'t tucked. They lied. Just like everyone always does. They lie. Never believe anyone.')
+
+    def set_centre(self):
+        self.pos_x = Player_PositionX_Modes.CENTRE
+        self.target_location_x = self.screen_block_widths
+        logging.debug('INFO : \t\tPLAYER : Set centre')
+
+    def set_right(self):
+        self.pos_x = Player_PositionX_Modes.RIGHT
+        self.target_location_x = 2*self.screen_block_widths
+        logging.debug('INFO : \t\tPLAYER : Set right')
+
+    def set_left(self):
+        self.pos_x = Player_PositionX_Modes.LEFT
+        self.target_location_x = 0
+        logging.debug('INFO : \t\tPLAYER : Set left')
+
+    def post_location(self):
         self.location_post_callback(self.pos_world_x, self.pos_world_y)
+        logging.debug('INFO : \t\tPLAYER : Posting location')
