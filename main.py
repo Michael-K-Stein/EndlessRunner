@@ -34,7 +34,7 @@ class DinoRender(ShowBase):
 
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
-        self.title = OnscreenText(text="NSSWS", style=1,
+        self.title = OnscreenText(text="Haag", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
@@ -64,8 +64,9 @@ class DinoRender(ShowBase):
 
     def game_loop(self, task):
         for bird in self.birds:
-            bird.setPos(bird, -1.5, 0, 0)
-       
+            #  -1.5, -0.05, 0 | right
+            #  -1.5, -0.05, 0 | left
+            bird.setPos(bird, -1.5, 0, -0.1)
         return Task.cont
 
     # Code to initialize the tunnel
@@ -143,8 +144,8 @@ class DinoRender(ShowBase):
         print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(0, -0.49, -5)
-        bird.setScale(.03)
+        bird.setPos(0, 0.29, -5)
+        bird.setScale(.02)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
       
