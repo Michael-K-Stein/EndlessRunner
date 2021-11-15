@@ -1,4 +1,5 @@
 # EndlessRunner
 An Augmented Reality Endless Runner 👺
 
-Hanich 18 has ANDROID STUDIO!!! this migga...
+### Authors: 
+Hanichim: 01, 02, 04, 07, 11, 12, 14, 17, 18
