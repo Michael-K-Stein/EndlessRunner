@@ -16,6 +16,18 @@ TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 BIRD_SPAWN_INTERVAL_SECONDS = 3
 
+RALPH_START_X = 0
+RALPH_START_Y = -1
+RALPH_START_Z = 5.5
+
+RALPH_CENTER = (0, -1, 5.5)
+RALPH_LEFT = (-0.7, -0.7, 5.5)
+RALPH_RIGHT = (0.7, -0.7, 5.5)
+
+RALPH_CENTER_ROT = (0, -90, 0)
+RALPH_LEFT_ROT = (0, -90, 30)
+RALPH_RIGHT_ROT = (30, -90, 0)
+
 bird_spawner_timer = ClockObject()
 
 class DinoRender(ShowBase):
@@ -34,7 +46,7 @@ class DinoRender(ShowBase):
 
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
-        self.title = OnscreenText(text="Haag", style=1,
+        self.title = OnscreenText(text="Ha'ag", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
@@ -62,11 +74,43 @@ class DinoRender(ShowBase):
         self.initRalph()
         self.contTunnel()
 
+        # space to jump for now
+        self.accept("space", self.jump, ["fire", 1])
+        self.accept("arrow_left", self.rotate, ["left"])
+        self.accept("arrow_right", self.rotate, ["right"])
+
+    def rotate(self, direction):
+        print(f"Rotate {direction}")
+        if direction == "left":
+            self.ralph.lane -= 1
+            if self.ralph.lane < -1:
+                self.ralph.lane = -1
+        elif direction == "right":
+            self.ralph.lane += 1
+            if self.ralph.lane > 1:
+                self.ralph.lane = 1
+
+        if self.ralph.lane == -1:
+            self.ralph.setPos(*RALPH_LEFT)
+            self.ralph.setHpr(*RALPH_LEFT_ROT)
+            self.ralph.setH(self.ralph, 180)
+        elif self.ralph.lane == 0:
+            self.ralph.setPos(*RALPH_CENTER)
+            self.ralph.setHpr(*RALPH_CENTER_ROT)
+            self.ralph.setH(self.ralph, 180)
+        elif self.ralph.lane == 1:
+            self.ralph.setPos(*RALPH_RIGHT)
+            self.ralph.setHpr(*RALPH_RIGHT_ROT)
+            self.ralph.setH(self.ralph, 180)
+
+    def jump(self, key, value):
+        self.ralph.setPos(self.ralph, 0, 0, 2)
+
     def game_loop(self, task):
+
         for bird in self.birds:
-            #  -1.5, -0.05, 0 | right
-            #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, -1.5, 0, -0.1)
+            bird.setPos(bird, -1.5, 0, 0)
+
         return Task.cont
 
     # Code to initialize the tunnel
@@ -96,11 +140,12 @@ class DinoRender(ShowBase):
                             "walk": "models/ralph-walk"})
         self.ralph.reparentTo(render)
         self.ralph.setScale(.15)
-        self.ralph.setPos(0, -1, 5.5)
-        self.ralph.setHpr(0, -90, 0)
-        self.ralph.setH(0)
+        self.ralph.setPos(*RALPH_CENTER)
+        self.ralph.setHpr(*RALPH_CENTER_ROT)
         self.ralph.setH(self.ralph, 180)
         self.ralph.loop('run')
+        # Hanich 17 - yes it's a crime against humanity, deal with it! btw - -1 left, 0 center, 1 right
+        self.ralph.__dict__['lane'] = 0
 
     # This function is called to snap the front of the tunnel to the back
     # to simulate traveling through it
@@ -139,15 +184,15 @@ class DinoRender(ShowBase):
             self.spawn_bird()
             bird_spawner_timer.reset()
         return Task.cont
-    
+
     def spawn_bird(self):
         print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(0, 0.29, -5)
-        bird.setScale(.02)
+        bird.setPos(0, -0.49, -5)
+        bird.setScale(.03)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
-      
+
 demo = DinoRender()
 demo.run()
