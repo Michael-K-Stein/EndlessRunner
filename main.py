@@ -9,6 +9,7 @@ from direct.interval.FunctionInterval import Func
 from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
+import scan
 
 from player import Player
 
@@ -87,16 +88,38 @@ class DinoRender(ShowBase):
         self.player = Player(self.set_ralph_pos)
         self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
 
-    def rotate(self, direction):
-        print(f"Rotate {direction}")
-        if direction == "left":
-            self.ralph.lane -= 1
-            if self.ralph.lane < -1:
-                self.ralph.lane = -1
-        elif direction == "right":
-            self.ralph.lane += 1
-            if self.ralph.lane > 1:
-                self.ralph.lane = 1
+        # Init scanner
+        self.scanner = scan.Scanner(self.scanner_callback)
+        self.scanner.run_scanner()
+        self.accept("c", self.scanner.calibrate)
+
+    def scanner_callback(self, action):
+        if action == "JUMP":
+            self.jump()
+        elif action == "TOOK":
+            self.tuck()
+        elif action == "CENTER":
+            self.rotate(0)
+            self.tucknt()
+        elif action == "LEFT":
+            self.rotate(-1)
+            self.tucknt()
+        elif action == "RIGHT":
+            self.rotate(1)
+            self.tucknt()
+            
+    def rotate(self, lane):
+        # print(f"Rotate {direction}")
+        # if direction == "left":
+        #     self.ralph.lane -= 1
+        #     if self.ralph.lane < -1:
+        #         self.ralph.lane = -1
+        # elif direction == "right":
+        #     self.ralph.lane += 1
+        #     if self.ralph.lane > 1:
+        #         self.ralph.lane = 1
+
+        self.ralph.lane = lane
 
         if self.ralph.lane == -1:
             self.ralph.setPos(*RALPH_LEFT)
