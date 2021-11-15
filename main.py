@@ -89,6 +89,10 @@ class DinoRender(ShowBase):
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
             bird.setPos(bird, -1.5, 0, -0.1)
+            if bird.getPos()[1] <= -0.408:
+                print("colission!!!")
+                self.birds.remove(bird)
+                bird.remove()
         return Task.cont
 
     def set_ralph_pos(self, x, y):
