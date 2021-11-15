@@ -16,7 +16,13 @@ TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 BIRD_SPAWN_INTERVAL_SECONDS = 3
 
+GAME_SPEED_ACCELERATION_INTERVAL_SECONDS = 2
+BIRDS_X_ACCELERATION = -0.2
+
+
 bird_spawner_timer = ClockObject()
+game_speed_timer = ClockObject()
+
 
 class DinoRender(ShowBase):
 
@@ -47,9 +53,12 @@ class DinoRender(ShowBase):
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
 
+        self.birds_x_speed = -1.5
+
         self.birds = []
         self.taskMgr.add(self.bird_spawner, "BirdSpawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
+        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
 
         # World specific-code
         self.fog = Fog('distanceFog')
@@ -70,12 +79,21 @@ class DinoRender(ShowBase):
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, -1.5, 0, -0.1)
+            bird.setPos(bird, self.birds_x_speed, 0, 0)
             if bird.getPos()[1] <= -0.408:
                 print("colission!!!")
                 self.birds.remove(bird)
                 bird.remove()
         return Task.cont
+    
+
+    def game_speed_acceleration(self, task):
+        if (int(game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:
+            self.birds_x_speed += BIRDS_X_ACCELERATION
+            # self.birds_y_speed += BIRDS_X_ACCELERATION
+            game_speed_timer.reset()
+        return Task.cont
+
 
     # Code to initialize the tunnel
     def initTunnel(self):
@@ -152,7 +170,7 @@ class DinoRender(ShowBase):
         print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(0, 0.29, -5)
+        bird.setPos(0, -0.4, -5)
         bird.setScale(.02)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
