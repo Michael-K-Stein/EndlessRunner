@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 TRANSITION_MOVE_COUNT = 30
 JUMP_V0_FORCE = 0.9
-GRAVITY_FORCE = -0.0015
+GRAVITY_FORCE = -0.002
 MOTION_MULTIPLIER = 0.75
 
 class Player_PositionY_Modes(Enum):
@@ -51,11 +51,11 @@ class Player:
         self.player_width = self.screen_block_widths
         self.player_height = 2 * self.screen_block_heights
         self.pos_world_y = 0
-        self.pos_world_x = self.screen_block_widths
+        self.pos_world_x = 0#self.screen_block_widths
         self.target_location_x = self.pos_world_x
         self.target_location_y = self.pos_world_y
 
-    def update(self):
+    def update(self, delta_time):
         if self.pos_world_y != self.target_location_y:
             if self.pos_y == Player_PositionY_Modes.JUMPED:
                 self.pos_world_y = self.physics_world_jump_function(self.transition_move_counter, 0, JUMP_V0_FORCE, GRAVITY_FORCE)
@@ -65,10 +65,10 @@ class Player:
                     self.target_location_y = 0
                     pass
             else:
-                self.pos_world_y += MOTION_MULTIPLIER*((self.target_location_y-self.pos_world_y)/abs(self.pos_world_y - self.target_location_y))
+                self.pos_world_y += (1300 * delta_time)*MOTION_MULTIPLIER*((self.target_location_y-self.pos_world_y)/abs(self.pos_world_y - self.target_location_y))
         if self.pos_world_x != self.target_location_x:
             self.pos_world_x += ((self.target_location_x-self.pos_world_x)/abs(self.pos_world_x - self.target_location_x))
-        self.transition_move_counter += 1
+        self.transition_move_counter += (1300 * delta_time)
         self.post_location()
 
     def physics_world_jump_function(self,time:int, y_0:float, v_0:float, a:float):
@@ -103,17 +103,17 @@ class Player:
 
     def set_centre(self):
         self.pos_x = Player_PositionX_Modes.CENTRE
-        self.target_location_x = self.screen_block_widths
+        self.target_location_x = 0#self.screen_block_widths
         logging.debug('INFO : \t\tPLAYER : Set centre')
 
     def set_right(self):
         self.pos_x = Player_PositionX_Modes.RIGHT
-        self.target_location_x = 2*self.screen_block_widths
+        self.target_location_x = self.screen_block_widths
         logging.debug('INFO : \t\tPLAYER : Set right')
 
     def set_left(self):
         self.pos_x = Player_PositionX_Modes.LEFT
-        self.target_location_x = 0
+        self.target_location_x = -self.screen_block_widths
         logging.debug('INFO : \t\tPLAYER : Set left')
 
     def post_location(self):

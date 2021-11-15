@@ -10,6 +10,8 @@ from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
 
+from player import Player
+
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
 TUNNEL_TIME = 2  # Amount of time for one segment to travel the
@@ -27,6 +29,7 @@ RALPH_RIGHT = (0.7, -0.7, 5.5)
 RALPH_CENTER_ROT = (0, -90, 0)
 RALPH_LEFT_ROT = (0, -90, 30)
 RALPH_RIGHT_ROT = (30, -90, 0)
+RALPH_POSITION_MULTIPLIER = 0.05
 
 bird_spawner_timer = ClockObject()
 
@@ -74,10 +77,15 @@ class DinoRender(ShowBase):
         self.initRalph()
         self.contTunnel()
 
-        # space to jump for now
-        self.accept("space", self.jump, ["fire", 1])
         self.accept("arrow_left", self.rotate, ["left"])
         self.accept("arrow_right", self.rotate, ["right"])
+
+        self.accept("space", self.jump)
+        self.accept("lshift", self.tuck)
+        self.accept("rshift", self.tucknt)
+
+        self.player = Player(self.set_ralph_pos)
+        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
 
     def rotate(self, direction):
         print(f"Rotate {direction}")
@@ -107,11 +115,28 @@ class DinoRender(ShowBase):
         self.ralph.setPos(self.ralph, 0, 0, 2)
 
     def game_loop(self, task):
-
+        self.player.update(globalClock.getDt())
         for bird in self.birds:
-            bird.setPos(bird, -1.5, 0, 0)
-
+            #  -1.5, -0.05, 0 | right
+            #  -1.5, -0.05, 0 | left
+            bird.setPos(bird, -1.5, 0, -0.1)
+            if bird.getPos()[1] <= -0.408:
+                print("colission!!!")
+                self.birds.remove(bird)
+                bird.remove()
         return Task.cont
+
+    def jump(self):
+        self.player.jump()
+    def tuck(self):
+        #self.player.tuck()
+        self.ralph.setScale(0.15,0.15,0.15*0.5)
+    def tucknt(self):
+        self.ralph.setScale(0.15,0.15,0.15)
+
+    def set_ralph_pos(self, x, y):
+        #print(x,y)
+        self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
 
     # Code to initialize the tunnel
     def initTunnel(self):
