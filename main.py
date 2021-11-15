@@ -44,6 +44,8 @@ class DinoRender(ShowBase):
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
 
         self.birds = []
+        self.grasses = []
+
         self.taskMgr.add(self.bird_spawner, "BirdSpawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
 
@@ -67,13 +69,11 @@ class DinoRender(ShowBase):
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
             bird.setPos(bird, -1.5, 0, -0.1)
-            if bird.getPos()[1] <= -0.408:
-                print("colission!!!")
-                self.birds.remove(bird)
-                bird.remove()
+            #self.has_coliision(bird)
+            self.is_out(bird)
         return Task.cont
 
-    # Code to initialize the tunnel
+    # initialize the tunnel
     def initTunnel(self):
         self.tunnel = [None] * 4
 
@@ -83,21 +83,14 @@ class DinoRender(ShowBase):
             # The front segment needs to be attached to render
             if x == 0:
                 self.tunnel[x].reparentTo(render)
-            # The rest of the segments parent to the previous one, so that by moving
-            # the front segement, the entire tunnel is moved
+            # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
             else:
                 self.tunnel[x].reparentTo(self.tunnel[x - 1])
-            # We have to offset each segment by its length so that they stack onto
-            # each other. Otherwise, they would all occupy the same space.
             self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
-            # Now we have a tunnel consisting of 4 repeating segments with a
-            # hierarchy like this:
-            # render<-tunnel[0]<-tunnel[1]<-tunnel[2]<-tunnel[3]
 
+    # initialize the runner
     def initRalph(self):
-        self.ralph = Actor("models/ralph",
-                           {"run": "models/ralph-run",
-                            "walk": "models/ralph-walk"})
+        self.ralph = Actor("models/ralph", {"run": "models/ralph-run", "walk": "models/ralph-walk"})
         self.ralph.reparentTo(render)
         self.ralph.setScale(.15)
         self.ralph.setPos(0, -1, 5.5)
@@ -106,19 +99,15 @@ class DinoRender(ShowBase):
         self.ralph.setH(self.ralph, 180)
         self.ralph.loop('run')
 
-    # This function is called to snap the front of the tunnel to the back
-    # to simulate traveling through it
+    # This function is called to snap the front of the tunnel to the back to simulate traveling through it
     def contTunnel(self):
-        # This line uses slices to take the front of the list and put it on the
-        # back. For more information on slices check the Python manual
+        # This line uses slices to take the front of the list and put it on the back
         self.tunnel = self.tunnel[1:] + self.tunnel[0:1]
-        # Set the front segment (which was at TUNNEL_SEGMENT_LENGTH) to 0, which
-        # is where the previous segment started
+        # Set the front segment (which was at TUNNEL_SEGMENT_LENGTH) to 0, which is where the previous segment started
         self.tunnel[0].setZ(0)
         # Reparent the front to render to preserve the hierarchy outlined above
         self.tunnel[0].reparentTo(render)
-        # Set the scale to be apropriate (since attributes like scale are
-        # inherited, the rest of the segments have a scale of 1)
+        # Set the scale to be apropriate (since attributes like scale are inherited, the rest of the segments have a scale of 1)
         self.tunnel[0].setScale(.155, .155, .305)
         # Set the new back to the values that the rest of teh segments have
         self.tunnel[3].reparentTo(self.tunnel[2])
@@ -145,13 +134,38 @@ class DinoRender(ShowBase):
         return Task.cont
     
     def spawn_bird(self):
-        print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
         bird.setPos(0, 0.29, -5)
         bird.setScale(.02)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
-      
+    
+    def spawn_grass(self):
+        grass = self.loader.loadModel("models/grasses/grass.obj")
+        grass.reparentTo(render)
+        grass.setPos(0, 0, -5)
+        grass.setScale(.02)
+        grass.setHpr(90, 0, 90)
+        self.grasses.append(grass)
+    
+    def has_coliision(self, obj):
+        if obj.get_pos()[1] <= -0.408 and obj.get_pos()[1] > -0.42:
+            print("colission!!!")
+            obj.remove_node()
+            if obj in self.birds:
+                self.birds.remove(obj)
+            else:
+                self.grasses.remove(obj)
+
+    def is_out(self, obj):
+        if obj.get_pos()[1] <= -0.7:
+            print("removed!!!")
+            obj.remove_node()
+            if obj in self.birds:
+                self.birds.remove(obj)
+            else:
+                self.grasses.remove(obj)
+    
 demo = DinoRender()
 demo.run()
