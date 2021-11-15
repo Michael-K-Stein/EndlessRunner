@@ -1,3 +1,5 @@
+from random import random
+from direct.showbase.PythonUtil import Enum
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Fog
 from panda3d.core import TextNode
@@ -9,6 +11,13 @@ from direct.interval.FunctionInterval import Func
 from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
+from panda3d.core import CollisionTraverser
+from panda3d.core import CollisionHandlerPusher
+from panda3d.core import CollisionSphere, CollisionNode
+import random
+
+from player import Player
+from enum import Enum
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
@@ -16,20 +25,24 @@ TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 BIRD_SPAWN_INTERVAL_SECONDS = 3
 
+RALPH_POSITION_MULTIPLIER = 0.05
+
 bird_spawner_timer = ClockObject()
 
-class DinoRender(ShowBase):
+class TYPE(Enum):
+    BIRD = 1,
+    BOX = 2,
+    NULL = 0
 
-    # Macro-like function used to reduce the amount to code needed to create the
-    # on screen instructions
+class DinoRender(ShowBase):
+    # Macro-like function used to reduce the amount to code needed to create the on screen instructions
     def genLabelText(self, i, text):
         return OnscreenText(text=text, parent=base.a2dTopLeft, scale=.05,
                             pos=(0.06, -.065 * i), fg=(1, 1, 1, 1),
                             align=TextNode.ALeft)
 
     def __init__(self):
-        # Initialize the ShowBase class from which we inherit, which will
-        # create a window and set up everything we need for rendering into it.
+        # Initialize the ShowBase class from which we inherit, which will create a window and set up everything we need for rendering into it.
         ShowBase.__init__(self)
 
         # Standard initialization stuff
@@ -46,7 +59,7 @@ class DinoRender(ShowBase):
         self.birds = []
         self.grasses = []
 
-        self.taskMgr.add(self.bird_spawner, "BirdSpawner")
+        self.taskMgr.add(self.spawner_timer, "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
 
         # World specific-code
@@ -64,16 +77,43 @@ class DinoRender(ShowBase):
         self.initRalph()
         self.contTunnel()
 
+        self.accept("space", self.jump)
+        self.accept("lshift", self.tuck)
+        self.accept("rshift", self.tucknt)
+
+        self.player = Player(self.set_ralph_pos)
+        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        self.i = 0
+        
+
+    def jump(self):
+        self.player.jump()
+    def tuck(self):
+        #self.player.tuck()
+        self.ralph.setScale(0.15,0.15,0.15*0.5)
+    def tucknt(self):
+        self.ralph.setScale(0.15,0.15,0.15)
+
     def game_loop(self, task):
+        self.player.update(globalClock.getDt())
+        for grass in self.grasses:
+            grass.setPos(grass, -0.2, 0, 0)
+            if self.has_coliision(grass) or self.is_out(grass):
+                self.remove_obj(grass)
+
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
             bird.setPos(bird, -1.5, 0, -0.1)
-            #self.has_coliision(bird)
-            self.is_out(bird)
+            if self.has_coliision(bird) or self.is_out(bird):
+                self.remove_obj(bird)
+        
         return Task.cont
 
-    # initialize the tunnel
+    def set_ralph_pos(self, x, y):
+        self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
+
+    # Code to initialize the tunnel
     def initTunnel(self):
         self.tunnel = [None] * 4
 
@@ -95,7 +135,6 @@ class DinoRender(ShowBase):
         self.ralph.setScale(.15)
         self.ralph.setPos(0, -1, 5.5)
         self.ralph.setHpr(0, -90, 0)
-        self.ralph.setH(0)
         self.ralph.setH(self.ralph, 180)
         self.ralph.loop('run')
 
@@ -127,45 +166,55 @@ class DinoRender(ShowBase):
         )
         self.tunnelMove.start()
 
-    def bird_spawner(self, task):
+    def spawner_timer(self, task):
+        self.i += 1
         if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
-            self.spawn_bird()
+            if self.i % 2 == 0:
+                self.spawner(TYPE.BIRD, random.randint(0, 2))
+            else:
+                self.spawner(TYPE.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
         return Task.cont
     
-    def spawn_bird(self):
+    def spawner(self, type, lane):
+        if type is TYPE.BIRD:
+            self.spawn_bird(lane)
+        elif type is TYPE.BOX:
+            self.spawn_box(lane)
+    
+    def spawn_bird(self, lane):
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(0, 0.29, -5)
+        bird.setPos(((lane-1)*0.35), 0.29, -5)
         bird.setScale(.02)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
     
-    def spawn_grass(self):
-        grass = self.loader.loadModel("models/grasses/grass.obj")
-        grass.reparentTo(render)
-        grass.setPos(0, 0, -5)
-        grass.setScale(.02)
-        grass.setHpr(90, 0, 90)
-        self.grasses.append(grass)
+    def spawn_box(self, lane):
+        box = self.loader.loadModel("models/crate")
+        box.reparentTo(render)
+        box.setPos(((lane-1)*0.35), -0.7, -5.5)
+        box.setScale(.3)
+        box.setHpr(90, 0, 90)
+        self.grasses.append(box)
     
     def has_coliision(self, obj):
         if obj.get_pos()[1] <= -0.408 and obj.get_pos()[1] > -0.42:
             print("colission!!!")
-            obj.remove_node()
-            if obj in self.birds:
-                self.birds.remove(obj)
-            else:
-                self.grasses.remove(obj)
+            return True
+        return False
+    
+    def remove_obj(self, obj):
+        obj.remove_node()
+        if obj in self.birds:
+            self.birds.remove(obj)
+        else:
+            self.grasses.remove(obj)
 
     def is_out(self, obj):
         if obj.get_pos()[1] <= -0.7:
-            print("removed!!!")
-            obj.remove_node()
-            if obj in self.birds:
-                self.birds.remove(obj)
-            else:
-                self.grasses.remove(obj)
+            return True
+        return False
     
 demo = DinoRender()
 demo.run()
