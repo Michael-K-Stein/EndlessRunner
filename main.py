@@ -269,7 +269,7 @@ class DinoRender(ShowBase):
         print("Spawn")
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(0, -0.49, -5)
+        bird.setPos(0, -0.4, -5)
         bird.setScale(.03)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
