@@ -32,6 +32,10 @@ class DinoRender(ShowBase):
         # create a window and set up everything we need for rendering into it.
         ShowBase.__init__(self)
 
+        background_music = base.loader.loadSfx('./music.wav')
+        background_music.setLoop(True)
+        background_music.play()
+
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
         self.title = OnscreenText(text="Haag", style=1,
