@@ -1,5 +1,6 @@
 """
-
+    Author: Hanich 18
+    Purpose: A class for a player with basic physics functionality.
 """
 
 from enum import Enum
