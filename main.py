@@ -57,7 +57,7 @@ class DinoRender(ShowBase):
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
 
         self.birds = []
-        self.grasses = []
+        self.boxes = []
 
         self.taskMgr.add(self.spawner_timer, "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
@@ -96,15 +96,15 @@ class DinoRender(ShowBase):
 
     def game_loop(self, task):
         self.player.update(globalClock.getDt())
-        for grass in self.grasses:
-            grass.setPos(grass, -0.2, 0, 0)
-            if self.has_coliision(grass) or self.is_out(grass):
-                self.remove_obj(grass)
+        for box in self.boxes:
+            box.setPos(box, -0.2, 0, 0)
+            if self.has_coliision(box) or self.is_out(box):
+                self.remove_obj(box)
 
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, -1.5, 0, -0.1)
+            bird.setPos(bird, -1.5, 0, -0.0)#-0.1
             if self.has_coliision(bird) or self.is_out(bird):
                 self.remove_obj(bird)
         
@@ -132,7 +132,8 @@ class DinoRender(ShowBase):
     def initRalph(self):
         self.ralph = Actor("models/ralph", {"run": "models/ralph-run", "walk": "models/ralph-walk"})
         self.ralph.reparentTo(render)
-        self.ralph.setScale(.15)
+        self.ralph.setScale(.15, 0.10, 0.15)
+        self.ralph.setScale(self.ralph, 1, 1, 1.2)
         self.ralph.setPos(0, -1, 5.5)
         self.ralph.setHpr(0, -90, 0)
         self.ralph.setH(self.ralph, 180)
@@ -185,18 +186,19 @@ class DinoRender(ShowBase):
     def spawn_bird(self, lane):
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(((lane-1)*0.35), 0.29, -5)
-        bird.setScale(.02)
+        bird.setPos(((lane-1)*0.35), -0.10, -5)#0.29
+        #bird.setPos(0.35, -0.10, -5)#0.29
+        bird.setScale(0.015, 0.015, 0.015)
         bird.setHpr(90, 0, 90)
         self.birds.append(bird)
     
     def spawn_box(self, lane):
         box = self.loader.loadModel("models/crate")
         box.reparentTo(render)
-        box.setPos(((lane-1)*0.35), -0.7, -5.5)
+        box.setPos(((lane-1)*0.35), -0.7, -5)
         box.setScale(.3)
         box.setHpr(90, 0, 90)
-        self.grasses.append(box)
+        self.boxes.append(box)
     
     def has_coliision(self, obj):
         if obj.get_pos()[1] <= -0.408 and obj.get_pos()[1] > -0.42:
@@ -209,7 +211,7 @@ class DinoRender(ShowBase):
         if obj in self.birds:
             self.birds.remove(obj)
         else:
-            self.grasses.remove(obj)
+            self.boxes.remove(obj)
 
     def is_out(self, obj):
         if obj.get_pos()[1] <= -0.7:
