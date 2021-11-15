@@ -87,8 +87,11 @@ class DinoRender(ShowBase):
         self.player = Player(self.set_ralph_pos)
         self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
 
+        self.ralph_base_y = self.ralph.getY()
+        self.ralph_base_x = self.ralph.getX()
+        self.ralph_rot_multiplier = 0
+
     def rotate(self, direction):
-        print(f"Rotate {direction}")
         if direction == "left":
             self.ralph.lane -= 1
             if self.ralph.lane < -1:
@@ -98,18 +101,25 @@ class DinoRender(ShowBase):
             if self.ralph.lane > 1:
                 self.ralph.lane = 1
 
+        print(f"Rotate {direction}")
+        print(f"Lane: {self.ralph.lane}")
         if self.ralph.lane == -1:
             self.ralph.setPos(*RALPH_LEFT)
             self.ralph.setHpr(*RALPH_LEFT_ROT)
             self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = 0.5
         elif self.ralph.lane == 0:
             self.ralph.setPos(*RALPH_CENTER)
             self.ralph.setHpr(*RALPH_CENTER_ROT)
             self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = 0
         elif self.ralph.lane == 1:
             self.ralph.setPos(*RALPH_RIGHT)
             self.ralph.setHpr(*RALPH_RIGHT_ROT)
             self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = -0.5
+        self.ralph_base_y = self.ralph.getY()
+        self.ralph_base_x = self.ralph.getX()
 
     def jump(self, key, value):
         self.ralph.setPos(self.ralph, 0, 0, 2)
@@ -123,7 +133,7 @@ class DinoRender(ShowBase):
             if bird.getPos()[1] <= -0.408:
                 print("colission!!!")
                 self.birds.remove(bird)
-                bird.remove()
+                bird.remove_node()
         return Task.cont
 
     def jump(self):
@@ -136,7 +146,8 @@ class DinoRender(ShowBase):
 
     def set_ralph_pos(self, x, y):
         #print(x,y)
-        self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
+        self.ralph.setPos(self.ralph_base_x + ((y/270)*self.ralph_rot_multiplier), (y/270) + self.ralph_base_y, 5.5)
+        #self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
 
     # Code to initialize the tunnel
     def initTunnel(self):
