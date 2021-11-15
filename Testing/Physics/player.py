@@ -5,10 +5,12 @@
 
 from enum import Enum
 import logging, sys
+logging.basicConfig(level=logging.DEBUG)
 
 TRANSITION_MOVE_COUNT = 30
-JUMP_V0_FORCE = 10
-GRAVITY_FORCE = -10
+JUMP_V0_FORCE = 0.9
+GRAVITY_FORCE = -0.0015
+MOTION_MULTIPLIER = 0.75
 
 class Player_PositionY_Modes(Enum):
     DEFAULT = 0
@@ -28,7 +30,7 @@ class Player:
 
     pos_world_x = -1
     pos_world_y = -1
-    pos_x = Player_PositionX_Modes.DEFAULT
+    pos_x = Player_PositionX_Modes.CENTRE
     pos_y = Player_PositionY_Modes.DEFAULT
     target_location_x = -1
     target_location_y = -1
@@ -40,7 +42,7 @@ class Player:
 
     location_post_callback = None
 
-    def __init__(loc_post_callback):
+    def __init__(self, loc_post_callback):
         self.location_post_callback = loc_post_callback
 
     def callibrate(self, screen_width:int, screen_height:int, y_levels:int, x_levels:int):
@@ -48,15 +50,25 @@ class Player:
         self.screen_block_heights = screen_height / y_levels
         self.player_width = self.screen_block_widths
         self.player_height = 2 * self.screen_block_heights
+        self.pos_world_y = 0
+        self.pos_world_x = self.screen_block_widths
+        self.target_location_x = self.pos_world_x
+        self.target_location_y = self.pos_world_y
 
     def update(self):
-        if pos_world_y != target_location_y:
-            if self.pos_y = Player_PositionY_Modes.JUMPED:
-                self.pos_world_y = physics_world_jump_function(transition_move_counter, 0, JUMP_V0_FORCE, GRAVITY_FORCE)
+        if self.pos_world_y != self.target_location_y:
+            if self.pos_y == Player_PositionY_Modes.JUMPED:
+                self.pos_world_y = self.physics_world_jump_function(self.transition_move_counter, 0, JUMP_V0_FORCE, GRAVITY_FORCE)
+                if self.transition_move_counter > 1 and self.pos_world_y <= 0:#self.screen_block_heights:
+                    self.pos_y = Player_PositionY_Modes.DEFAULT
+                    self.pos_world_y = 0
+                    self.target_location_y = 0
+                    pass
             else:
-                self.pos_world_y += ((self.pos_world_y - self.target_location_y)/abs(self.pos_world_y - self.target_location_y))
-        if pos_world_x != target_location_x:
-            self.pos_world_x += ((self.pos_world_x - self.target_location_x)/abs(self.pos_world_x - self.target_location_x))
+                self.pos_world_y += MOTION_MULTIPLIER*((self.target_location_y-self.pos_world_y)/abs(self.pos_world_y - self.target_location_y))
+        if self.pos_world_x != self.target_location_x:
+            self.pos_world_x += ((self.target_location_x-self.pos_world_x)/abs(self.pos_world_x - self.target_location_x))
+        self.transition_move_counter += 1
         self.post_location()
 
     def physics_world_jump_function(self,time:int, y_0:float, v_0:float, a:float):
@@ -66,13 +78,14 @@ class Player:
         if self.pos_y != Player_PositionY_Modes.JUMPED:
             #self.pos_world_y += self.screen_block_heights
             self.pos_y = Player_PositionY_Modes.JUMPED
-            self.target_location_y = self.screen_block_heights
+            self.transition_move_counter = 0
+            self.target_location_y = 2*self.screen_block_heights
             logging.debug('INFO : \t\tPLAYER : jump : ')
         else:
             logging.debug('WARNING : \t\tPLAYER : jump : Player tried to jump while midair! WTF.👺')
 
     def tuck(self):
-        if self.pos_x != Player_PositionX_Modes.TUCKED:
+        if self.pos_y != Player_PositionY_Modes.TUCKED:
             #self.pos_world_y -= self.screen_block_heights
             self.pos_y = Player_PositionY_Modes.TUCKED
             self.target_location_y = -self.screen_block_heights
@@ -105,4 +118,4 @@ class Player:
 
     def post_location(self):
         self.location_post_callback(self.pos_world_x, self.pos_world_y)
-        logging.debug('INFO : \t\tPLAYER : Posting location')
+        #logging.debug('INFO : \t\tPLAYER : Posting location ' + '(' + str(self.pos_world_x) + ', ' + str(self.pos_world_y) + ')')
