@@ -1,2 +1,2 @@
 # EndlessRunner
-An Augmented Reality Endless Runner
+An Augmented Reality Endless Runner 👺
