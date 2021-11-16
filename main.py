@@ -13,9 +13,12 @@ from direct.task import Task
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerPusher
-from panda3d.core import CollisionSphere, CollisionNode
+from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox
 import random
+import numpy
+import math
 
+import scan
 from player import Player
 from enum import Enum
 
@@ -25,9 +28,29 @@ TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 BIRD_SPAWN_INTERVAL_SECONDS = 3
 
+GAME_SPEED_ACCELERATION_INTERVAL_SECONDS = 2
+BIRDS_X_ACCELERATION = -0.2
+
+RALPH_START_X = 0
+RALPH_START_Y = -1
+RALPH_START_Z = 5.5
+
+RALPH_CENTER = (0, -1, 5.5)
+RALPH_LEFT = (-0.7, -0.7, 5.5)
+RALPH_RIGHT = (0.7, -0.7, 5.5)
+
+RALPH_CENTER_ROT = (0, -90, 0)
+RALPH_LEFT_ROT = (0, -90, 30)
+RALPH_RIGHT_ROT = (30, -90, 0)
 RALPH_POSITION_MULTIPLIER = 0.05
 
+OBSTACLE_SPWN_DEPTH = -50
+
+FOG_EXPIRY_DENSITY = 0.045
+
 bird_spawner_timer = ClockObject()
+game_speed_timer = ClockObject()
+
 
 class TYPE(Enum):
     BIRD = 1,
@@ -41,13 +64,27 @@ class DinoRender(ShowBase):
                             pos=(0.06, -.065 * i), fg=(1, 1, 1, 1),
                             align=TextNode.ALeft)
 
+    def handle_collision(self, entry):
+        #print('=== This is a collision message: ===')
+        #print(entry)
+        #print('== End collision message ===')
+        self.player_hit()
+        
+
     def __init__(self):
         # Initialize the ShowBase class from which we inherit, which will create a window and set up everything we need for rendering into it.
         ShowBase.__init__(self)
 
+        self.init_collision_detection()
+
+        self.background_music = base.loader.loadSfx('./music.wav')
+        self.background_music.setLoop(True)
+        self.background_music.play()
+        self.playback_speed = 1
+
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
-        self.title = OnscreenText(text="Haag", style=1,
+        self.title = OnscreenText(text="Ha'ag", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
@@ -56,16 +93,19 @@ class DinoRender(ShowBase):
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
 
+        self.birds_x_speed = -1.5 * 10
+
         self.birds = []
         self.boxes = []
 
         self.taskMgr.add(self.spawner_timer, "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
+        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
 
         # World specific-code
         self.fog = Fog('distanceFog')
         self.fog.setColor(0, 0, 0)
-        self.fog.setExpDensity(.045)
+        self.fog.setExpDensity(FOG_EXPIRY_DENSITY)
         # We will set fog on render which means that everything in our scene will
         # be affected by fog. Alternatively, you could only set fog on a specific
         # object/node and only it and the nodes below it would be affected by
@@ -77,41 +117,118 @@ class DinoRender(ShowBase):
         self.initRalph()
         self.contTunnel()
 
+        self.accept("arrow_left", self.rotate, ["left"])
+        self.accept("arrow_right", self.rotate, ["right"])
+
         self.accept("space", self.jump)
         self.accept("lshift", self.tuck)
         self.accept("rshift", self.tucknt)
+        self.accept('enter', self.kill_all)
 
         self.player = Player(self.set_ralph_pos)
         self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
         self.i = 0
         
 
-    def jump(self):
-        self.player.jump()
-    def tuck(self):
-        #self.player.tuck()
-        self.ralph.setScale(0.15,0.15,0.15*0.5)
-    def tucknt(self):
-        self.ralph.setScale(0.15,0.15,0.15)
+        self.ralph_base_y = self.ralph.getY()
+        self.ralph_base_x = self.ralph.getX()
+        self.ralph_rot_multiplier = 0
+
+        # Init scanner
+        self.scanner = scan.Scanner(self.scanner_callback)
+        self.scanner.run_scanner()
+        self.accept("c", self.scanner.calibrate)
+
+    def init_collision_detection(self):
+        self.cTrav = CollisionTraverser()
+
+        self.cTrav.showCollisions(self.render)
+
+        self.notifier = CollisionHandlerEvent()
+
+        self.notifier.addInPattern('%fn-into-%in')
+
+        self.accept('box-into-ralph', self.handle_collision)
+        self.accept('ralph-into-box', self.handle_collision)
+        self.accept('ralph-into-bird', self.handle_collision)
+        self.accept('bird-into-ralph', self.handle_collision)
+
+    def scanner_callback(self, action):
+        if action == "JUMP":
+            self.jump()
+        elif action == "TOOK":
+            self.tuck()
+        elif action == "CENTER":
+            self.rotate(0)
+            self.tucknt()
+        elif action == "LEFT":
+            self.rotate(-1)
+            self.tucknt()
+        elif action == "RIGHT":
+            self.rotate(1)
+            self.tucknt()
+
+    def rotate(self, lane):
+        self.ralph.lane = lane        
+
+        print(f"Rotate {lane}")
+        print(f"Lane: {self.ralph.lane}")
+        if self.ralph.lane == -1:
+            self.ralph.setPos(*RALPH_LEFT)
+            self.ralph.setHpr(*RALPH_LEFT_ROT)
+            self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = 0.5
+        elif self.ralph.lane == 0:
+            self.ralph.setPos(*RALPH_CENTER)
+            self.ralph.setHpr(*RALPH_CENTER_ROT)
+            self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = 0
+        elif self.ralph.lane == 1:
+            self.ralph.setPos(*RALPH_RIGHT)
+            self.ralph.setHpr(*RALPH_RIGHT_ROT)
+            self.ralph.setH(self.ralph, 180)
+            self.ralph_rot_multiplier = -0.5
+        self.ralph_base_y = self.ralph.getY()
+        self.ralph_base_x = self.ralph.getX()
+
+    def jump(self, key, value):
+        self.ralph.setPos(self.ralph, 0, 0, 2)
 
     def game_loop(self, task):
         self.player.update(globalClock.getDt())
         for box in self.boxes:
-            box.setPos(box, -0.2, 0, 0)
-            if self.has_coliision(box) or self.is_out(box):
-                self.remove_obj(box)
+            box.setPos(box, self.birds_x_speed / (7*5), 0, 0)
 
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, -1.5, 0, -0.0)#-0.1
-            if self.has_coliision(bird) or self.is_out(bird):
-                self.remove_obj(bird)
+            bird.setPos(bird, self.birds_x_speed, 0, -0.0)#-0.1
         
         return Task.cont
 
+    def game_speed_acceleration(self, task):
+        if (int(game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:
+            self.birds_x_speed += BIRDS_X_ACCELERATION
+            self.playback_speed += 0.002
+            self.background_music.setPlayRate(self.playback_speed)
+            # self.birds_y_speed += BIRDS_X_ACCELERATION
+            game_speed_timer.reset()
+        return Task.cont
+
+    def jump(self):
+        self.player.jump()
+    
+    def tuck(self):
+        #self.player.tuck()
+        self.ralph.setScale(0.15,0.15,0.15*0.5)
+    
+    def tucknt(self):
+        self.ralph.setScale(0.15,0.15,0.15)
+
     def set_ralph_pos(self, x, y):
-        self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
+        #print(x,y)
+        self.ralph.setPos(self.ralph_base_x + ((y/270)*self.ralph_rot_multiplier), (y/270) + self.ralph_base_y, 5.5)
+        #self.ralph.setPos(x*RALPH_POSITION_MULTIPLIER, -1+(y/270), 5.5)
 
     # Code to initialize the tunnel
     def initTunnel(self):
@@ -132,12 +249,21 @@ class DinoRender(ShowBase):
     def initRalph(self):
         self.ralph = Actor("models/ralph", {"run": "models/ralph-run", "walk": "models/ralph-walk"})
         self.ralph.reparentTo(render)
-        self.ralph.setScale(.15, 0.10, 0.15)
-        self.ralph.setScale(self.ralph, 1, 1, 1.2)
-        self.ralph.setPos(0, -1, 5.5)
-        self.ralph.setHpr(0, -90, 0)
+        self.ralph.setScale(.15)
+        self.ralph.setPos(*RALPH_CENTER)
+        self.ralph.setHpr(*RALPH_CENTER_ROT)
         self.ralph.setH(self.ralph, 180)
         self.ralph.loop('run')
+        # Hanich 17 - yes it's a crime against humanity, deal with it! btw - -1 left, 0 center, 1 right
+        self.ralph.__dict__['lane'] = 0
+
+        self.ralph.collider = self.ralph.attachNewNode(CollisionNode('ralph'))
+        self.ralph.collider.node().addSolid(
+            #CollisionPolygon(Point3(0, 0, 0),Point3(0,1,1),Point3(1,1,1),Point3(1,0,0))
+            CollisionPolygon(Point3(-0.8, 1, 0),Point3(-0.8,1,5),Point3(0.8,1,5),Point3(0.8,1,0))
+            )
+        self.ralph.collider.show()
+        self.cTrav.addCollider(self.ralph.collider, self.notifier)
 
     # This function is called to snap the front of the tunnel to the back to simulate traveling through it
     def contTunnel(self):
@@ -168,10 +294,12 @@ class DinoRender(ShowBase):
         self.tunnelMove.start()
 
     def spawner_timer(self, task):
-        self.i += 1
         if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
+            #self.i += 1
+            self.i == 0
             if self.i % 2 == 0:
-                self.spawner(TYPE.BIRD, random.randint(0, 2))
+                #self.spawner(TYPE.BIRD, random.randint(0, 2))
+                 self.spawner(TYPE.BIRD, 1)
             else:
                 self.spawner(TYPE.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
@@ -186,18 +314,30 @@ class DinoRender(ShowBase):
     def spawn_bird(self, lane):
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
-        bird.setPos(((lane-1)*0.35), -0.10, -5)#0.29
-        #bird.setPos(0.35, -0.10, -5)#0.29
+        bird.setPos(((lane-1)*0.35), -0.10, OBSTACLE_SPWN_DEPTH)
         bird.setScale(0.015, 0.015, 0.015)
         bird.setHpr(90, 0, 90)
+
+        col = bird.attachNewNode(CollisionNode('bird'))
+        col.node().addSolid(CollisionBox(Point3(0.9, 2.5, 2.5), 0.2, 5, 5)) #nt3(0, 2, 0), 0.2, 5, 2))
+        #        col.node().addSolid(CollisionBox(Point3(0.5, 0.4, 0), 0.6, 1, 1))
+        col.show()
+        self.cTrav.addCollider(col, self.notifier)
+
         self.birds.append(bird)
     
     def spawn_box(self, lane):
         box = self.loader.loadModel("models/crate")
         box.reparentTo(render)
-        box.setPos(((lane-1)*0.35), -0.7, -5)
+        box.setPos(((lane-1)*0.35), -0.7, OBSTACLE_SPWN_DEPTH)
         box.setScale(.3)
         box.setHpr(90, 0, 90)
+
+        col = box.attachNewNode(CollisionNode('box'))
+        col.node().addSolid(CollisionBox(Point3(0, 0, 0.46), 0.5, 0.5, 0.5))
+        col.show()
+        self.cTrav.addCollider(col, self.notifier)
+
         self.boxes.append(box)
     
     def has_coliision(self, obj):
@@ -217,6 +357,14 @@ class DinoRender(ShowBase):
         if obj.get_pos()[1] <= -0.7:
             return True
         return False
+
+    def kill_all(self):
+        print('Killing all!')
+        self.scanner.kill_me()
+        exit(0)
+    
+    def player_hit(self):
+        print('Player hit!')
     
 demo = DinoRender()
 demo.run()
