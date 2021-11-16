@@ -5,13 +5,14 @@ def init_tunnel(self):
     self.tunnel = [None] * 4
 
     for x in range(4):
-        self.tunnel[x] = loader.loadModel('assets/models/tunnel')
+        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(x) + '/tunnel')
         if x == 0:
             self.tunnel[x].reparentTo(render)
         # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
         else:
             self.tunnel[x].reparentTo(self.tunnel[x - 1])
         self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+        add_tunnel_props(self, self.tunnel[x])
 
 # This function is called to snap the front of the tunnel to the back to simulate traveling through it
 def cont_tunnel(self):
@@ -38,6 +39,12 @@ def cont_tunnel(self):
     )
     self.tunnelMove.start()
 
+    #add_tunnel_props(self)
+
+def add_tunnel_props(self, tunnel):
+    pipe = self.loader.loadModel("assets\\models\\tunnel_varients\\RustPipe.obj")
+    pipe.reparentTo(tunnel)
+
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
         if random.randint(0,1) % 2 == 0:
@@ -45,6 +52,8 @@ def spawner_timer(self, task):
         else:
             spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
+    if random.randint(0,1000) == 7:
+        spawn_prize(self, random.randint(0, 2))
     return Task.cont
 
 def spawner(self, type, lane):
@@ -81,9 +90,33 @@ def spawn_box(self, lane):
     self.cTrav.addCollider(col, self.notifier)
     self.session["boxes"].append(box)
 
+def spawn_prize(self, lane):
+    prize = None
+    x = random.randint(0,2)
+    if  x == 0:
+        prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
+    elif x == 1:
+        prize = self.loader.loadModel("assets/models/objects/basketball.egg")
+    elif x == 2:
+        prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
+        
+    prize.reparentTo(render)
+    #prize.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -1.3, OBSTACLE_SPWN_DEPTH)
+    prize.setPos(0, -1.3, OBSTACLE_SPWN_DEPTH)
+    prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
+    col = prize.attachNewNode(CollisionNode('prize'))
+    col.node().addSolid(CollisionSphere(Point3(0,2,0), 0.7))
+    if self.DEBUG:
+        col.show()
+    self.cTrav.addCollider(col, self.notifier)
+
+    self.session["prizes"].append(prize)
+
 def remove_obj(self, obj):
     obj.remove_node()
     if obj in self.session["birds"]:
         self.session["birds"].remove(obj)
-    else:
+    elif obj in self.session["boxes"]:
         self.session["boxes"].remove(obj)
+    elif obj in self.session["prizes"]:
+        self.session["prizes"].remove(obj)

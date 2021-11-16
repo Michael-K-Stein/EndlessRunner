@@ -52,6 +52,7 @@ class Game(ShowBase):
         self.session = {
             "birds": [],
             "boxes": [],
+            "prizes": [],
             "time": 0,
             "score": 0,
             "score_last_update_time": 0,
@@ -84,11 +85,19 @@ class Game(ShowBase):
                   OnscreenText(text="Wait to calibrating...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
-        DirectButton(text = "Calibrate",
-                   command = self.scanner.calibrate,
-                   pos = (0, 0, -0.4),
-                   parent = self.gameMenu,
-                   scale = 0.07)
+        if not self.DEBUG:
+            DirectButton(text = "Calibrate",
+                    command = self.scanner.calibrate,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
+        else:
+            DirectButton(text = "DEBUG MODE",
+                    command = None,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
+        
         DirectButton(text = "Quit",
                    command = self.quit_game,
                    pos = (0, 0, -0.6),
@@ -107,7 +116,8 @@ class Game(ShowBase):
         self.taskMgr.remove("Spawner")
         self.taskMgr.remove("GameLoop")
         self.taskMgr.remove("GameSpeedAcceleration")
-        self.scanner.stop()
+        if not self.DEBUG:
+            self.scanner.stop()
         self.background_music.stop()
 
     def start_game(self):
@@ -175,6 +185,10 @@ class Game(ShowBase):
                 remove_obj(self, bird)
             #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
         
+        for prize in self.session["prizes"]:
+            prize.setPos(prize, 0, 0, -self.session["birds_x_speed"] / 10)
+            if is_out_of_frame(self, prize):
+                remove_obj(self, prize)
 
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
