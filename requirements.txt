@@ -1,1 +1,4 @@
 panda3d==1.10.10
+opencv-python
+opencv-contrib-python
+numpy
