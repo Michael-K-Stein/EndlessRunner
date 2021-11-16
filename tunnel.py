@@ -1,9 +1,11 @@
 from basefile import *
 
+TUNNELS_COUNT = 16
+
 # Code to initialize the tunnel
 def init_tunnel(self):
-    self.tunnel = [None] * 4
-    for x in range(4):
+    self.tunnel = [None] * TUNNELS_COUNT
+    for x in range(TUNNELS_COUNT):
         self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
         if x == 0:
             self.tunnel[x].reparentTo(render)
@@ -14,18 +16,18 @@ def init_tunnel(self):
         add_tunnel_props(self, self.tunnel[x])
 
 def remodel_tunnels(self, v=-1):
-    if self.tunnel[3] is not None:
-        self.tunnel[3].removeNode()
-        self.tunnel[3] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+    if self.tunnel[TUNNELS_COUNT-1] is not None:
+        self.tunnel[TUNNELS_COUNT-1].removeNode()
+        self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
         # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
-        self.tunnel[3].reparentTo(self.tunnel[2])
-        self.tunnel[3].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
-        add_tunnel_props(self, self.tunnel[3])
+        self.tunnel[TUNNELS_COUNT-1].reparentTo(self.tunnel[TUNNELS_COUNT-2])
+        self.tunnel[TUNNELS_COUNT-1].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+        add_tunnel_props(self, self.tunnel[TUNNELS_COUNT-1])
 
 # This function is called to snap the front of the tunnel to the back to simulate traveling through it
 def cont_tunnel(self):
     self.tunnel_counter += 1
-    if self.tunnel_counter % 4 == 0:
+    if self.tunnel_counter % 16 == 0:
         self.tunnel_color = random.randint(0,3)
     remodel_tunnels(self, self.tunnel_color)
 
@@ -57,6 +59,16 @@ def cont_tunnel(self):
 def add_tunnel_props(self, tunnel):
     pipe = self.loader.loadModel("assets\\models\\tunnel_varients\\RustPipe.obj")
     pipe.reparentTo(tunnel)
+    """plight = PointLight('plight')
+    plight.setColor((1, 1, 1, 1))
+    plnp = pipe.attachNewNode(plight)
+    plnp.setPos(0, 0, 0)
+    pipe.setLight(plnp)
+    """
+    alight = AmbientLight('alight')
+    alight.setColor((1, 1, 1, 1))
+    alnp = pipe.attachNewNode(alight)
+    pipe.setLight(alnp)
 
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
@@ -77,14 +89,14 @@ def spawner(self, type, lane):
         spawn_box(self, lane)
 
 def spawn_bird(self, lane):
-    bird = self.loader.loadModel("assets/models/birds/12214_Bird_v1max_l3.obj")
+    bird = self.loader.loadModel("assets/models/bluebird/bluebird")
     bird.reparentTo(render)
-    bird.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH)
-    bird.setScale(BIRD_BASE_SCALE, BIRD_BASE_SCALE, BIRD_BASE_SCALE)
-    bird.setHpr(90, 0, 90)
+    bird.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH-2)
+    bird.setScale(BIRD_BASE_SCALE)
+    bird.setHpr(90, 90, 90)
 
     col = bird.attachNewNode(CollisionNode('bird'))
-    col.node().addSolid(CollisionBox(Point3(0, 2.5, 2.5), 8, 5, 5))
+    col.node().addSolid(CollisionBox(Point3(0, 0.25, 0.25), 0.75, 0.25, 0.25))
     if self.DEBUG:
         col.show()
     self.cTrav.addCollider(col, self.notifier)
