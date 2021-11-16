@@ -158,7 +158,7 @@ class Game(ShowBase):
             tucknt(self)
         elif action == "CALIBRATED":
             self.labels[0].setText("Jump to start...")
-            self.labels[0].setPos((0,-0.2))
+            self.labels[0].setPos(0,-0.2)
             self.labels[0].setScale(0.1)
             self.labels[1].setText("")
 
