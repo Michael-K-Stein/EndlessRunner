@@ -69,7 +69,7 @@ BIRD_BASE_SCALE = 0.015
 MAGIC_RALPH_LOCATION_SCALE_FACTOR = 270
 MAGIC_POINT_THIRTY_FIVE = 0.35
 
-PRIZE_BASE_SCALE = 0.1
+PRIZE_BASE_SCALE = 0.3
 
 bird_spawner_timer = ClockObject()
 game_speed_timer = ClockObject()
@@ -463,11 +463,18 @@ class DinoRender(ShowBase):
     def spawn_prizes(self, task):
 
         if random.randint(0,100) == 7:
-            ball = self.loader.loadModel("models/objects/soccerBall.egg")
+            ball = None
+            x = random.randint(0,2)
+            if  x == 0:
+                ball = self.loader.loadModel("models/objects/soccerBall.egg")
+            elif x == 1:
+                ball = self.loader.loadModel("models/objects/basketball.egg")
+            elif x == 2:
+                ball = self.loader.loadModel("models/objects/toyball2.egg")
+                
             ball.reparentTo(render)
-            ball.setPos(0, -0.40, OBSTACLE_SPWN_DEPTH)
+            ball.setPos(0, -1.3, OBSTACLE_SPWN_DEPTH)
             ball.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
-
             col = ball.attachNewNode(CollisionNode('prize'))
             col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.5))
             if self.DEBUG:
