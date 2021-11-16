@@ -12,6 +12,7 @@ def init_tunnel(self):
         else:
             self.tunnel[x].reparentTo(self.tunnel[x - 1])
         self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+        add_tunnel_props(self, self.tunnel[x])
 
 # This function is called to snap the front of the tunnel to the back to simulate traveling through it
 def cont_tunnel(self):
@@ -37,6 +38,12 @@ def cont_tunnel(self):
         Func(cont_tunnel, self)
     )
     self.tunnelMove.start()
+
+    #add_tunnel_props(self)
+
+def add_tunnel_props(self, tunnel):
+    pipe = self.loader.loadModel("assets\\models\\tunnel_varients\\RustPipe.obj")
+    pipe.reparentTo(tunnel)
 
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
