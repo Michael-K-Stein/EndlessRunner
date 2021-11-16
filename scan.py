@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import threading
 DEFAULT_HEIGHT = 175
-DEFAULT_JUMP_THRESH = 10
+DEFAULT_JUMP_THRESH = 5
 DEFAULT_CROUCH_THRESH = 20
 DEFAULT_LEFT_RIGHT_THRESH = 30
 class Scanner:
