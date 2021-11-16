@@ -303,7 +303,6 @@ class DinoRender(ShowBase):
         self.player.jump()
     
     def tuck(self):
-        #self.player.tuck()
         self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
     
     def tucknt(self):
