@@ -172,10 +172,10 @@ class Scanner:
             self.find_center_of_person()
         
             t, _ = net.getPerfProfile()
-            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-
-
-            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            if self.is_centered():
+                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            else:
+                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (0, 0, 255), cv2.FILLED)
             
             #cv2.ellipse(frame, (int(self.frame_center_x + self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
             #cv2.ellipse(frame, (int(self.frame_center_x - self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
