@@ -1,6 +1,9 @@
+from basefile import *
+
 """
     Crime commiter: Hanich 18
     Fixer: Hanich 17
+    Fixer#2: Hanich 11
     Purpose: A class for a player with basic physics functionality.
 """
 
@@ -107,7 +110,7 @@ class Player:
         self.target_location_x = self.pos_world_x
         self.target_location_y = self.pos_world_y
 
-    def update(self, delta_time):
+    def update(self, this, delta_time):
         """
         Update the player location
 
@@ -117,7 +120,7 @@ class Player:
         self.do_movement(delta_time)
 
         self.transition_move_counter += (TIME_MULTIPLIER * delta_time)
-        self.post_location()
+        self.post_location(this)
 
     def do_movement(self, delta_time):
         """
@@ -153,7 +156,7 @@ class Player:
         Calculate the y movement
 
         :param delta_time: Time passed from last update
-        :return: 1 or -1, depends on y2 > y1
+        :return: 1 or -1, depends on y2 > y1, times that monstrosity
         """
         return (TIME_MULTIPLIER * delta_time) * MOTION_MULTIPLIER * \
                ((self.target_location_y - self.pos_world_y) /
@@ -164,9 +167,10 @@ class Player:
         Calculate the x movement, NOT REALLY USED
 
         :param delta_time: Time passed from last update
-        :return: 1 or -1, depends on x2 > x1
+        :return: 1 or -1, depends on x2 > x1, times that monstrosity
         """
-        return ((self.target_location_x - self.pos_world_x) /
+        return (TIME_MULTIPLIER * delta_time) * MOTION_MULTIPLIER * \
+               ((self.target_location_x - self.pos_world_x) /
                 abs(self.pos_world_x - self.target_location_x))
 
     def jump_movement(self):
@@ -256,7 +260,7 @@ class Player:
         self.target_location_x = -self.screen_block_width
         logging.debug('INFO: player.py/set_left(): Set left')
 
-    def post_location(self):
-        self.location_post_callback(self.pos_world_x, self.pos_world_y)
+    def post_location(self, this):
+        self.location_post_callback(this, self.pos_world_x, self.pos_world_y)
         # logging.debug('INFO : \t\tPLAYER : Posting location ' + '(' +
         #               str(self.pos_world_x) + ', ' + str(self.pos_world_y) + ')')
