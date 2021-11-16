@@ -10,6 +10,8 @@ def init_ralph(self):
     self.ralph.setPos(*RALPH_CENTER)
     self.ralph.setHpr(*RALPH_CENTER_ROT)
     self.ralph.setH(self.ralph, 180)
+    self.ralph.setTransparency(TransparencyAttrib.MAlpha)
+    self.ralph.setAlphaScale(0.35)
     self.ralph.loop('run')
     self.ralph.__dict__['lane'] = 0
 
