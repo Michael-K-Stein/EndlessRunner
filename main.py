@@ -4,6 +4,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Fog
 from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
+from direct.gui.OnscreenImage import OnscreenImage
 from direct.gui.DirectGui import *
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.MetaInterval import Sequence
@@ -89,7 +90,7 @@ class DinoRender(ShowBase):
         #print(entry)
         #print('== End collision message ===')
         self.player_hit()
-        
+
 
     def __init__(self):
         # Initialize the ShowBase class from which we inherit, which will create a window and set up everything we need for rendering into it.
@@ -124,7 +125,7 @@ class DinoRender(ShowBase):
         self.hit_text = OnscreenText(text="Hits: 0", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(0, 0), scale=.08)
-        
+
 
         # disable mouse control so that we can place the camera
         base.disableMouse()
@@ -173,12 +174,15 @@ class DinoRender(ShowBase):
     def show_menu(self):
         self.pause_game()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
-        DirectLabel(text="Ha'ag", parent=self.gameMenu, scale=0.1, pos = (0,0,0.2))
-        DirectButton(text = "Restart",
+        DirectFrame(parent=self.gameMenu, image = "models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
+        OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
+        OnscreenImage(parent=self.gameMenu, image = 'models/title2.PNG', pos = (0,0,0.3), scale=0.3)
+
+        """DirectButton(text = "Restart",
                    command = self.click_restart,
                    pos = (0, 0, -0.2),
                    parent = self.gameMenu,
-                   scale = 0.07)
+                   scale = 0.07)"""
         DirectButton(text = "Calibrate",
                    command = self.scanner.calibrate,
                    pos = (0, 0, -0.4),
@@ -207,10 +211,10 @@ class DinoRender(ShowBase):
         self.gameMenu.hide()
         self.player = Player(self.set_ralph_pos)
         self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
-        self.birds_x_speed = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
+        self.birds_x_speed = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED
         for node in self.birds + self.boxes:
             node.remove_node()
-        
+
         self.birds = []
         self.boxes = []
 
@@ -273,13 +277,13 @@ class DinoRender(ShowBase):
         cm = CardMaker('card')
         self.card = myRender2d.attachNewNode(cm.generate())
         #self.card = cm.generate().reParent(self.render)
-        
+
         WIDTHRATIO = 1
         HEIGHTRATIO = h/w
         DEPTH = 1
 
         self.card.setScale(WIDTHRATIO/2, DEPTH, HEIGHTRATIO)
-        
+
         self.card.setPos(-1, 0, -1)
 
         self.card.setBin("fixed", 0)
@@ -287,7 +291,7 @@ class DinoRender(ShowBase):
         self.card.setDepthWrite(False)
 
         return self.taskMgr.add(self.updateTex, 'video frame update')
-    
+
     def updateTex(self, task):
         # positive y goes down in openCV, so we must flip the y coordinates
         flipped_frame = cv2.flip(self.scanner.frame, 0)
@@ -297,7 +301,7 @@ class DinoRender(ShowBase):
 
         return task.cont
 
-        
+
 
     def scanner_callback(self, action):
         if action == "JUMP":
@@ -317,12 +321,12 @@ class DinoRender(ShowBase):
             self.tucknt()
 
     def rotate(self, lane):
-        self.ralph.lane = lane        
+        self.ralph.lane = lane
 
         if self.DEBUG:
             print(f"Rotate {lane}")
             print(f"Lane: {self.ralph.lane}")
-        
+
         if self.ralph.lane == -1:
             self.ralph.setPos(*RALPH_LEFT)
             self.ralph.setHpr(*RALPH_LEFT_ROT)
@@ -373,10 +377,10 @@ class DinoRender(ShowBase):
 
     def jump(self):
         self.player.jump()
-    
+
     def tuck(self):
         self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
-    
+
     def tucknt(self):
         self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE)
 
@@ -454,13 +458,13 @@ class DinoRender(ShowBase):
                 self.spawner(TYPE.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
         return Task.cont
-    
+
     def spawner(self, type, lane):
         if type is TYPE.BIRD:
             self.spawn_bird(lane)
         elif type is TYPE.BOX:
             self.spawn_box(lane)
-    
+
     def spawn_bird(self, lane):
         bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
@@ -475,7 +479,7 @@ class DinoRender(ShowBase):
         self.cTrav.addCollider(col, self.notifier)
 
         self.birds.append(bird)
-    
+
     def spawn_box(self, lane):
         box = self.loader.loadModel("models/crate")
         box.reparentTo(render)
@@ -490,7 +494,7 @@ class DinoRender(ShowBase):
         self.cTrav.addCollider(col, self.notifier)
 
         self.boxes.append(box)
-    
+
     def has_coliision(self, obj):
         print('THIS SHOULD NEVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER PRINT!!!')
         print('If this does print, find references to func<has_coliision> (yes, i see the typo. TODO: fix typo)')
@@ -498,7 +502,7 @@ class DinoRender(ShowBase):
             print("colission!!!")
             return True
         return False
-    
+
     def remove_obj(self, obj):
         obj.remove_node()
         if obj in self.birds:
@@ -516,7 +520,7 @@ class DinoRender(ShowBase):
             print('Killing all!')
         self.scanner.kill_me()
         exit(0)
-    
+
     def player_hit(self):
         self.hit += 1
         if self.DEBUG:
