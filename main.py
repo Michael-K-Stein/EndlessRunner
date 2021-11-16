@@ -208,8 +208,6 @@ class Game(ShowBase):
 
     def game_speed_acceleration(self, task):
         if (int(self.game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:
-            print(f'Birds speed: {self.session["birds_x_speed"]}')
-            print(f'Music speed: {self.session["playback_speed"]}')
             if self.session["birds_x_speed"] > -MAX_BIRDS_X_SPEED:
                 self.session["birds_x_speed"] += BIRDS_X_ACCELERATION
             if self.session["playback_speed"] < MAX_BACKGROUND_MUSIC_SPEED:
