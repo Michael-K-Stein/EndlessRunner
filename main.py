@@ -160,10 +160,11 @@ class Game(ShowBase):
             rotate(self, 1)
             tucknt(self)
         elif action == "CALIBRATED":
-            self.labels[0].setText("Jump to start...")
-            self.labels[0].setPos(0,-0.2)
-            self.labels[0].setScale(0.1)
-            self.labels[1].setText("")
+            if "labels" in dir(self):
+                self.labels[0].setText("Jump to start...")
+                self.labels[0].setPos(0,-0.2)
+                self.labels[0].setScale(0.1)
+                self.labels[1].setText("")
 
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
