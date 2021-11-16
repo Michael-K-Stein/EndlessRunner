@@ -4,7 +4,7 @@ DEFAULT_HEIGHT = 175
 DEFAULT_JUMP_THRESH = 10
 DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
-DEFAULT_CALIB_LEFTRIGHT = 50
+DEFAULT_CALIB_LEFTRIGHT = 65
 DEFAULT_CALIB_HEIGHT = 300
 
 BODY_PARTS = { "Nose": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
@@ -118,8 +118,9 @@ class Scanner:
 
     def is_centered(self):
         frame_x, frame_y, _ = self.frame.shape
-        frame_x //= 4
-        frame_y //= 4
+        frame_x //= 2
+        frame_y //= 2
+        print(f'{self.person_x} - {frame_x}')
         return abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
             abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
 
@@ -205,7 +206,7 @@ class Scanner:
                 print("time: ", time.localtime().tm_sec - self.time_elapsed_calibration)
                 frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
                 if self.is_centered():
-                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 10:  
+                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:  
                         self.is_calibrating = False
                         self.calibrate()
                 else:
