@@ -398,9 +398,6 @@ class DinoRender(ShowBase):
             box.setPos(box, self.birds_x_speed / (7*5), 0, 0)
 
         for bird in self.birds:
-            #  -1.5, -0.05, 0 | right
-            #  -1.5, -0.05, 0 | left
-            #bird.setPos(bird, self.birds_x_speed, 0, 0)
             bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getZ()) / 10)#-0.1
         
         self.time += globalClock.getDt()
