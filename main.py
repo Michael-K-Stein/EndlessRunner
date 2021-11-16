@@ -4,6 +4,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Fog
 from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
+from direct.gui.DirectGui import *
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.MetaInterval import Sequence
 from direct.interval.LerpInterval import LerpFunc
@@ -17,6 +18,8 @@ from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent,
 import random
 import numpy
 import math
+import scan
+import sys
 
 import scan
 from player import Player
@@ -88,19 +91,12 @@ class DinoRender(ShowBase):
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
+        self.escapeEventText = self.genLabelText(1, "ESC: Quit")
+
         # disable mouse control so that we can place the camera
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
-
-        self.birds_x_speed = -1.5 * 10
-
-        self.birds = []
-        self.boxes = []
-
-        self.taskMgr.add(self.spawner_timer, "Spawner")
-        self.taskMgr.add(self.game_loop, "GameLoop")
-        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
 
         # World specific-code
         self.fog = Fog('distanceFog')
@@ -124,20 +120,76 @@ class DinoRender(ShowBase):
         self.accept("lshift", self.tuck)
         self.accept("rshift", self.tucknt)
         self.accept('enter', self.kill_all)
-
-        self.player = Player(self.set_ralph_pos)
-        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
         self.i = 0
-        
 
         self.ralph_base_y = self.ralph.getY()
         self.ralph_base_x = self.ralph.getX()
         self.ralph_rot_multiplier = 0
 
         # Init scanner
-        self.scanner = scan.Scanner(self.scanner_callback)
-        self.scanner.run_scanner()
-        self.accept("c", self.scanner.calibrate)
+        if "debug" not in sys.argv:
+            self.scanner = scan.Scanner(self.scanner_callback)
+            self.scanner.run_scanner()
+            self.accept("c", self.scanner.calibrate)
+
+        self.show_menu()
+
+    def show_menu(self):
+        self.pause_game()
+        self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
+        DirectLabel(text="Ha'ag", parent=self.gameMenu, scale=0.1, pos = (0,0,0.2))
+        DirectButton(text = "Restart",
+                   command = self.click_restart,
+                   pos = (0, 0, -0.2),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+        DirectButton(text = "Calibrate",
+                   command = self.scanner.calibrate,
+                   pos = (0, 0, -0.4),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+        DirectButton(text = "Quit",
+                   command = self.quit_game,
+                   pos = (0, 0, -0.6),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+
+    def resume_game(self):
+        self.tasks_running = True
+        self.taskMgr.add(self.spawner_timer, "Spawner")
+        self.taskMgr.add(self.game_loop, "GameLoop")
+        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
+
+    def pause_game(self):
+        self.tasks_running = False
+        self.taskMgr.remove("BirdSpawner")
+        self.taskMgr.remove("GameLoop")
+        self.taskMgr.remove("GameSpeedAcceleration")
+        self.background_music.stop()
+
+    def click_restart(self):
+        self.gameMenu.hide()
+        self.player = Player(self.set_ralph_pos)
+        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        self.birds_x_speed = -1.5
+        for bird in self.birds if hasattr(self, "birds") else []:
+            bird.remove_node()
+        
+        self.birds_x_speed = -1.5 * 10
+        self.birds = []
+        self.boxes = []
+
+        self.resume_game()
+        self.background_music.play()
+
+    def quit_game(self):
+        self.scanner.stop()
+        sys.exit()
+
+    def exit_game(self):
+        self.scanner.release()
+        sys.exit(0)
+
 
     def init_collision_detection(self):
         self.cTrav = CollisionTraverser()
@@ -155,6 +207,8 @@ class DinoRender(ShowBase):
 
     def scanner_callback(self, action):
         if action == "JUMP":
+            if not self.tasks_running:
+                self.click_restart()
             self.jump()
         elif action == "TOOK":
             self.tuck()
@@ -295,11 +349,11 @@ class DinoRender(ShowBase):
 
     def spawner_timer(self, task):
         if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
-            #self.i += 1
-            self.i == 0
+            self.i += 1
+            #self.i == 0
             if self.i % 2 == 0:
-                #self.spawner(TYPE.BIRD, random.randint(0, 2))
-                 self.spawner(TYPE.BIRD, 1)
+                self.spawner(TYPE.BIRD, random.randint(0, 2))
+                 #self.spawner(TYPE.BIRD, 1)
             else:
                 self.spawner(TYPE.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
