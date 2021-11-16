@@ -539,10 +539,10 @@ class DinoRender(ShowBase):
         if self.DEBUG:
             print(self.hit)
         self.hit_text.text = 'Hits: ' + str(self.hit)
-        if self.hearts_counter > 0:
+        if self.hearts_counter > 1:
             self.hearts_obj[self.hearts_counter - 1].setImage('broken_heart.png')
         else:
-            print('exit!!!')
+            self.show_menu()
         self.hearts_counter -= 1
         #self.hit_text.text = 'Hits: ' + str(self.hit)
     
