@@ -11,6 +11,12 @@ from direct.interval.LerpInterval import LerpFunc
 from direct.interval.FunctionInterval import Func
 from direct.actor.Actor import Actor
 from direct.task import Task
+from panda3d.core import Texture, CardMaker
+from panda3d.core import WindowProperties
+from panda3d.core import NodePath
+from panda3d.core import Camera
+from panda3d.core import OrthographicLens
+
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerPusher
@@ -22,8 +28,8 @@ import random
 import numpy
 import math
 import scan
+import cv2
 import sys
-
 import scan
 from player import Player
 from enum import Enum
@@ -155,6 +161,7 @@ class DinoRender(ShowBase):
         if not self.DEBUG:
             self.scanner = scan.Scanner(self.scanner_callback)
             self.scanner.run_scanner()
+            task = self.overlay()
             self.accept("c", self.scanner.calibrate)
 
         self.show_menu()
@@ -232,6 +239,58 @@ class DinoRender(ShowBase):
         self.accept('ralph-into-box', self.handle_collision)
         self.accept('ralph-into-bird', self.handle_collision)
         self.accept('bird-into-ralph', self.handle_collision)
+
+    def overlay(self):
+        dr = self.win.makeDisplayRegion()
+        dr.setSort(20)
+
+        myCamera2d = NodePath(Camera('myCam2d'))
+        lens = OrthographicLens()
+        lens.setFilmSize(2, 2)
+        lens.setNearFar(-1000, 1000)
+        myCamera2d.node().setLens(lens)
+
+        myRender2d = NodePath('myRender2d')
+        myRender2d.setDepthTest(False)
+        myRender2d.setDepthWrite(False)
+        myCamera2d.reparentTo(myRender2d)
+        dr.setCamera(myCamera2d)
+
+        h, w, _ = self.scanner.frame.shape  # accessing the width and height of the frame
+        # setup panda3d scripting env (render, taskMgr, camera etc)
+        # set up a texture for (h by w) rgb image
+        self.tex = Texture()
+        self.tex.setup2dTexture(w, h, Texture.T_unsigned_byte,
+                        Texture.F_rgb)
+        # set up a card to apply the numpy texture
+        cm = CardMaker('card')
+        self.card = myRender2d.attachNewNode(cm.generate())
+        #self.card = cm.generate().reParent(self.render)
+        
+        WIDTHRATIO = 1
+        HEIGHTRATIO = h/w
+        DEPTH = 1
+
+        self.card.setScale(WIDTHRATIO/2, DEPTH, HEIGHTRATIO)
+        
+        self.card.setPos(-1, 0, -1)
+
+        self.card.setBin("fixed", 0)
+        self.card.setDepthTest(False)
+        self.card.setDepthWrite(False)
+
+        return self.taskMgr.add(self.updateTex, 'video frame update')
+    
+    def updateTex(self, task):
+        # positive y goes down in openCV, so we must flip the y coordinates
+        flipped_frame = cv2.flip(self.scanner.frame, 0)
+        # overwriting the memory with new frame
+        self.tex.setRamImage(flipped_frame)
+        self.card.setTexture(self.tex)  # now apply it to the card
+
+        return task.cont
+
+        
 
     def scanner_callback(self, action):
         if action == "JUMP":
