@@ -198,7 +198,7 @@ class Game(ShowBase):
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
 
-        if self.session["last_tunnel_remodel_time"] + 15 < self.session["time"]:
+        if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
             self.session["last_tunnel_remodel_time"] = self.session["time"]
             remodel_tunnels(self)
 

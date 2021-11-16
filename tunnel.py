@@ -9,6 +9,8 @@ def remodel_tunnels(self, v=-1):
     if v == -1:
         v = random.randint(0,3)
     for x in range(4):
+        if self.tunnel[x] is not None:
+            pass#self.tunnel[x].remove_node()
         self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
         if x == 0:
             self.tunnel[x].reparentTo(render)
@@ -124,3 +126,5 @@ def remove_obj(self, obj):
         self.session["boxes"].remove(obj)
     elif obj in self.session["prizes"]:
         self.session["prizes"].remove(obj)
+    else:
+        pass
