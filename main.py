@@ -43,7 +43,7 @@ class Game(ShowBase):
         if not self.DEBUG:
             self.scanner = scan.Scanner(self.scanner_callback)
             self.scanner.run_scanner()
-            task = self.overlay()
+            task = scan.overlay(self)
             self.accept("c", self.scanner.calibrate)
 
         self.show_menu()
@@ -52,7 +52,9 @@ class Game(ShowBase):
         self.session = {
             "birds": [],
             "boxes": [],
+            "prizes": [],
             "time": 0,
+            "last_tunnel_remodel_time": 0,
             "score": 0,
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
@@ -77,16 +79,29 @@ class Game(ShowBase):
 
     def show_menu(self):
         self.stop_tasks()
+        if not self.DEBUG:
+            self.scanner = scan.Scanner(self.scanner_callback)
+            self.scanner.run_scanner()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
         DirectFrame(parent=self.gameMenu, image = "assets/models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
-        OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
+        # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
+        self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
+                  OnscreenText(text="Wait to calibrating...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
-        DirectButton(text = "Calibrate",
-                   command = self.scanner.calibrate,
-                   pos = (0, 0, -0.4),
-                   parent = self.gameMenu,
-                   scale = 0.07)
+        if not self.DEBUG:
+            DirectButton(text = "Calibrate",
+                    command = self.scanner.calibrate,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
+        else:
+            DirectButton(text = "DEBUG MODE",
+                    command = None,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
+        
         DirectButton(text = "Quit",
                    command = self.quit_game,
                    pos = (0, 0, -0.6),
@@ -105,6 +120,8 @@ class Game(ShowBase):
         self.taskMgr.remove("Spawner")
         self.taskMgr.remove("GameLoop")
         self.taskMgr.remove("GameSpeedAcceleration")
+        if not self.DEBUG:
+            self.scanner.stop()
         self.background_music.stop()
 
     def start_game(self):
@@ -137,56 +154,6 @@ class Game(ShowBase):
         self.fog.setExpDensity(FOG_EXPIRY_DENSITY)
         render.setFog(self.fog)
 
-    def overlay(self):
-        dr = self.win.makeDisplayRegion()
-        dr.setSort(20)
-
-        myCamera2d = NodePath(Camera('myCam2d'))
-        lens = OrthographicLens()
-        lens.setFilmSize(2, 2)
-        lens.setNearFar(-1000, 1000)
-        myCamera2d.node().setLens(lens)
-
-        myRender2d = NodePath('myRender2d')
-        myRender2d.setDepthTest(False)
-        myRender2d.setDepthWrite(False)
-        myCamera2d.reparentTo(myRender2d)
-        dr.setCamera(myCamera2d)
-
-        h, w, _ = self.scanner.frame.shape  # accessing the width and height of the frame
-        # setup panda3d scripting env (render, taskMgr, camera etc)
-        # set up a texture for (h by w) rgb image
-        self.tex = Texture()
-        self.tex.setup2dTexture(w, h, Texture.T_unsigned_byte,
-                        Texture.F_rgb)
-        # set up a card to apply the numpy texture
-        cm = CardMaker('card')
-        self.card = myRender2d.attachNewNode(cm.generate())
-        #self.card = cm.generate().reParent(self.render)
-
-        WIDTHRATIO = 1
-        HEIGHTRATIO = h/w
-        DEPTH = 1
-
-        self.card.setScale(WIDTHRATIO/2, DEPTH, HEIGHTRATIO)
-
-        self.card.setPos(-1, 0, -1)
-
-        self.card.setBin("fixed", 0)
-        self.card.setDepthTest(False)
-        self.card.setDepthWrite(False)
-
-        return self.taskMgr.add(self.update_tex, 'video frame update')
-
-    def update_tex(self, task):
-        # positive y goes down in openCV, so we must flip the y coordinates
-        flipped_frame = cv2.flip(self.scanner.frame, 0)
-        # overwriting the memory with new frame
-        self.tex.setRamImage(flipped_frame)
-        self.card.setTexture(self.tex)  # now apply it to the card
-
-        return task.cont
-
     def scanner_callback(self, action):
         if action == "JUMP":
             if not self.tasks_running:
@@ -203,6 +170,11 @@ class Game(ShowBase):
         elif action == "RIGHT":
             rotate(self, 1)
             tucknt(self)
+        elif action == "CALIBRATED":
+            self.labels[0].setText("Jump to start...")
+            self.labels[0].setPos(0,-0.2)
+            self.labels[0].setScale(0.1)
+            self.labels[1].setText("")
 
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
@@ -217,12 +189,20 @@ class Game(ShowBase):
                 remove_obj(self, bird)
             #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
         
+        for prize in self.session["prizes"]:
+            prize.setPos(prize, 0, 0, -self.session["birds_x_speed"] / 10)
+            if is_out_of_frame(self, prize):
+                remove_obj(self, prize)
 
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
+
+        if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
+            self.session["last_tunnel_remodel_time"] = self.session["time"]
+            remodel_tunnels(self)
 
         return Task.cont
 

@@ -15,11 +15,16 @@ def init_collision_detection(self):
     def handle_collision(entry):
         player_hit(self)
 
+    def handle_prize_collision(entry):
+        self.session["score"] += PRIZE_REWARD
+    
     # magic. Do not touch!
     self.accept('box-into-ralph', handle_collision)
     self.accept('ralph-into-box', handle_collision)
     self.accept('ralph-into-bird', handle_collision)
     self.accept('bird-into-ralph', handle_collision)
+    self.accept('prize-into-ralph', handle_prize_collision)
+    self.accept('ralph-into-prize', handle_prize_collision)
 
 def player_hit(self):
     self.session["hit"] += 1
@@ -43,8 +48,12 @@ def player_hit(self):
     #self.hit_text.text = 'Hits: ' + str(self.hit)
 
 def is_out_of_frame(self, obj):
-    if obj.get_pos()[1] <= -0.7:
-        return True
+    if obj not in self.session["prizes"]:
+        if obj.get_pos()[1] <= -0.7:
+            return True
+    else:
+        if obj.get_pos()[2] >= 10:
+            return True
     return False
 
 

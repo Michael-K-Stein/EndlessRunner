@@ -17,15 +17,18 @@ from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
-from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox
+from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox, CollisionSphere
 from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 import random
 import math
-import cv2
 import sys
 from enum import Enum
+import numpy as np
+import cv2
+import threading
+import time
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
@@ -62,6 +65,8 @@ MAX_BACKGROUND_MUSIC_SPEED = 1.2
 BIRD_SPAWN_INTERVAL_SECONDS = 3
 
 STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS = 3
+PRIZE_REWARD = 777
+PRIZE_BASE_SCALE = 0.3
 
 # Pure magic
 MAGIC_RALPH_LOCATION_SCALE_FACTOR = 270
