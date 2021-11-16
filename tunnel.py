@@ -3,15 +3,8 @@ from basefile import *
 # Code to initialize the tunnel
 def init_tunnel(self):
     self.tunnel = [None] * 4
-    remodel_tunnels(self, 0)
-
-def remodel_tunnels(self, v=-1):
-    if v == -1:
-        v = random.randint(0,3)
     for x in range(4):
-        if self.tunnel[x] is not None:
-            pass#self.tunnel[x].remove_node()
-        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
         if x == 0:
             self.tunnel[x].reparentTo(render)
         # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
@@ -20,8 +13,22 @@ def remodel_tunnels(self, v=-1):
         self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
         add_tunnel_props(self, self.tunnel[x])
 
+def remodel_tunnels(self, v=-1):
+    if self.tunnel[3] is not None:
+        self.tunnel[3].removeNode()
+        self.tunnel[3] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+        # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
+        self.tunnel[3].reparentTo(self.tunnel[2])
+        self.tunnel[3].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+        add_tunnel_props(self, self.tunnel[3])
+
 # This function is called to snap the front of the tunnel to the back to simulate traveling through it
 def cont_tunnel(self):
+    self.tunnel_counter += 1
+    if self.tunnel_counter % 4 == 0:
+        self.tunnel_color = random.randint(0,3)
+    remodel_tunnels(self, self.tunnel_color)
+
     # This line uses slices to take the front of the list and put it on the back
     self.tunnel = self.tunnel[1:] + self.tunnel[0:1]
     # Set the front segment (which was at TUNNEL_SEGMENT_LENGTH) to 0, which is where the previous segment started
