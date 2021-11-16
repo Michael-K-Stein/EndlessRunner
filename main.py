@@ -80,7 +80,7 @@ class Game(ShowBase):
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
         DirectFrame(parent=self.gameMenu, image = "assets/models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
         # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
-        self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
+        self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait to calibrating...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
