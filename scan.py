@@ -128,6 +128,14 @@ class Scanner:
         cv2.destroyAllWindows()
         cv2.waitKey(1)
 
+
+
+    def release(self):
+        self._cap.release()
+        cv2.destroyAllWindows()
+
+
+
     @staticmethod
     def get_surface(box):
         x, y, w, h = box
