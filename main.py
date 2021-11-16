@@ -23,7 +23,7 @@ class Game(ShowBase):
 
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
-        base.setBackgroundColor(0, 0, 0)
+        base.setBackgroundColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
         
         init_tunnel(self)
         self.init_fog()
@@ -141,7 +141,7 @@ class Game(ShowBase):
     
     def init_fog(self):
         self.fog = Fog('distanceFog')
-        self.fog.setColor(0, 0, 0)
+        self.fog.setColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
         self.fog.setExpDensity(FOG_EXPIRY_DENSITY)
         render.setFog(self.fog)
 
@@ -175,7 +175,8 @@ class Game(ShowBase):
                 remove_obj(self, box)
 
         for bird in self.session["birds"]:
-            bird.setPos(bird, self.session["birds_x_speed"], 0, math.sin(bird.getZ()) / 10)#-0.1
+            #bird.setPos(bird, self.session["birds_x_speed"], 0, math.sin(bird.getZ()) / 10)#-0.1
+            bird.setPos(bird, 0, -self.session["birds_x_speed"] / 10, math.sin(bird.getZ()) / 40)#-0.1
             if is_out_of_frame(self, bird):
                 remove_obj(self, bird)
             #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
