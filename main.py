@@ -244,6 +244,7 @@ class DinoRender(ShowBase):
 
         self.resume_game()
         self.background_music.play()
+        self.playback_speed = 1
         self.hit = 0
 
     def quit_game(self):
@@ -377,7 +378,8 @@ class DinoRender(ShowBase):
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getPosX()) / 10)#-0.1
+            #bird.setPos(bird, self.birds_x_speed, 0, 0)
+            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getZ()) / 10)#-0.1
         
         self.time += globalClock.getDt()
         if self.time > self.score_last_update_time + 0.2:
@@ -475,7 +477,6 @@ class DinoRender(ShowBase):
         if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
             if random.randint(0,1) % 2 == 0:
                 self.spawner(TYPE.BIRD, random.randint(0, 2))
-                #self.spawner(TYPE.BIRD, 2)
             else:
                 self.spawner(TYPE.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
@@ -554,6 +555,9 @@ class DinoRender(ShowBase):
         else:
             self.show_menu()
         self.hearts_counter -= 1
+
+        for node in self.birds + self.boxes:
+            self.remove_obj(node)
         #self.hit_text.text = 'Hits: ' + str(self.hit)
     
 game = DinoRender()
