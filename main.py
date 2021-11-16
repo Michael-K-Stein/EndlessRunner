@@ -96,24 +96,12 @@ class Game(ShowBase):
                   OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
-        if not self.DEBUG:
-            DirectButton(text = "Calibrate",
-                    command = self.scanner.calibrate,
-                    pos = (0, 0, -0.4),
-                    parent = self.gameMenu,
-                    scale = 0.07)
-        else:
+        if self.DEBUG:
             DirectButton(text = "DEBUG MODE",
                     command = None,
                     pos = (0, 0, -0.4),
                     parent = self.gameMenu,
                     scale = 0.07)
-        
-        DirectButton(text = "Quit",
-                   command = self.quit_game,
-                   pos = (0, 0, -0.6),
-                   parent = self.gameMenu,
-                   scale = 0.07)
 
     def start_tasks(self):
         self.tasks_running = True
