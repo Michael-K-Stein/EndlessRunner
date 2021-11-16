@@ -1,96 +1,128 @@
 from basefile import *
 
-
 DEFAULT_HEIGHT = 175
-
 DEFAULT_JUMP_THRESH = 10
-DEFAULT_CROUCH_THRESH = 15
+DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
-
 DEFAULT_CALIB_LEFTRIGHT = 50
 DEFAULT_CALIB_HEIGHT = 300
 
-class Scanner:
+BODY_PARTS = { "Nose": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
+               "LShoulder": 5, "LElbow": 6, "LWrist": 7, "RHip": 8, "RKnee": 9,
+               "RAnkle": 10, "LHip": 11, "LKnee": 12, "LAnkle": 13, "REye": 14,
+               "LEye": 15, "REar": 16, "LEar": 17, "Background": 18 }
 
+POSE_PAIRS = [ ["Neck", "RShoulder"], ["Neck", "LShoulder"], ["RShoulder", "RElbow"],
+               ["RElbow", "RWrist"], ["LShoulder", "LElbow"], ["LElbow", "LWrist"],
+               ["Neck", "RHip"], ["RHip", "RKnee"], ["RKnee", "RAnkle"], ["Neck", "LHip"],
+               ["LHip", "LKnee"], ["LKnee", "LAnkle"], ["Neck", "Nose"], ["Nose", "REye"],
+               ["REye", "REar"], ["Nose", "LEye"], ["LEye", "LEar"] ]
+
+net = cv2.dnn.readNetFromTensorflow("graph_opt.pb")
+
+threshold = 0.2
+
+
+class Scanner:
+    
     def __init__(self, callback) -> None:
-        self.defult_y = 0
-        self.defult_height = 0
-        self.largest_box = None
-        self.jump_thresh = DEFAULT_JUMP_THRESH
-        self.crouch_thresh = DEFAULT_CROUCH_THRESH
-        self.center = 0
-        self.left_right_thresh = DEFAULT_LEFT_RIGHT_THRESH
         self.callback = callback
         self.last_action = ""
         self.is_running = True
-        self.overlay = cv2.resize(cv2.imread('assets/images/Outline-body.png'), (720, 480))
+        self.cur_points = None
+        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
         self.is_calibrating = True
         self.time_elapsed_calibration = time.localtime().tm_sec - 3
+        self.person_x = 0
+        self.person_y = 0
+        self.person_height = 0
 
-        # initialize the HOG descriptor/person detector
-        self._hog = cv2.HOGDescriptor()
-        self._hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
+        self.left_right_thresh = 0
+        self.jump_thresh = 0 
+        self.frame_center_x = 0
+        self.frame_center_y = 0
+        self.crouch_thresh = 0
         cv2.startWindowThread()
 
         # open webcam video stream
         self._cap = cv2.VideoCapture(0)
+        
         self.frame = self._cap.read()[1]
         self.frame = cv2.resize(self.frame, (720, 480))
     
     def stop(self):
-        if not self.is_running:
-            return
         self.is_running = False
+        self.release()
+    
+    def find_height_of_person(self):
+        self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
 
-        self._cap.release()
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
+    def find_center_of_person(self):
+        sum_x, sum_y, count = 0, 0, 0
+        cur_point = 0
+        for each in self.cur_points:
+            if cur_point >= 13:
+                break
+            cur_point+=1
+            if each is not None:
+                sum_x += each[0] 
+                sum_y += each[1]
+                count += 1
+        
+        if count == 0:
+            self.person_x = 0
+            self.person_y = 0 
+        else:
+            sum_x //= count
+            sum_y //= count
+            self.person_x = sum_x
+            self.person_y = sum_y
+
 
     def calibrate(self):
-        x, y, w, h = self.largest_box
-
-        self.scale = h / DEFAULT_HEIGHT
+        self.find_height_of_person()
+        #adjusting thresholds
+        self.scale = self.person_height / DEFAULT_HEIGHT
         self.jump_thresh = DEFAULT_JUMP_THRESH * self.scale
         self.crouch_thresh = DEFAULT_CROUCH_THRESH * self.scale
         self.left_right_thresh = DEFAULT_LEFT_RIGHT_THRESH * self.scale
-
-        self.defult_y = y + h // 2
-        self.defult_height = h
-        self.center = x + w // 2
+        #finding center of page
+        self.frame_center_x = self.person_x
+        self.frame_center_y = self.person_y
 
         action = "CALIBRATED"
         self.callback(action)
 
     def test_for_action(self):
         action = None
-        (x, y, w, h) = self.largest_box
-        if self.defult_y - (y + h // 2) > self.jump_thresh:
+        if self.is_calibrating:
+            return
+        #print(f'{self.person_y} < {self.frame_center_y} - {self.crouch_thresh}')
+        if self.frame_center_y - self.person_y > self.jump_thresh:
             action = "JUMP"
-        elif h + self.crouch_thresh < self.defult_height:
+        elif self.person_y - self.frame_center_y  >  self.crouch_thresh:
             action = "TOOK"
-        elif x + w // 2 > self.center + self.left_right_thresh:
+        elif self.person_x > self.frame_center_x + self.left_right_thresh:
             action = "RIGHT"
-        elif x + w // 2 < self.center - self.left_right_thresh:
+        elif self.person_x < self.frame_center_x - self.left_right_thresh:
             action = "LEFT"
         else:
             action = "CENTER"
 
         if action is not None:
+            #print(action)
             if self.last_action != action:
                 self.last_action = action
                 self.callback(action)
 
     def is_centered(self):
-        if self.largest_box is None:
-            return False
-        (x, y, w, h) = self.largest_box
         frame_x, frame_y, _ = self.frame.shape
-        frame_x //= 2
-        frame_y //= 2
-        return abs(x + w // 2 - frame_x // 2) < DEFAULT_CALIB_LEFTRIGHT and\
-            abs(y + h // 2 - frame_y // 2) < DEFAULT_CALIB_HEIGHT
-    
+        frame_x //= 4
+        frame_y //= 4
+        return abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
+            abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
+
     def run_scanner(self):
         self.thread = threading.Thread(target=self.scan)
         self.thread.start()
@@ -98,59 +130,94 @@ class Scanner:
     def scan(self):
         while self.is_running:
             # Capture frame-by-frame
-            _, frame = self._cap.read()
+            ret, frame = self._cap.read()
             frame=cv2.flip(frame, 1)
             # resizing for faster detection
-            frame = cv2.resize(frame, (320, 240))
+            frame = cv2.resize(frame, (360, 240))
+            
+            #start of openpose:
+            net.setInput(cv2.dnn.blobFromImage(frame, 1.0, (360, 240), (127.5, 127.5, 127.5), swapRB=True, crop=False))
+            out = net.forward()
+            out = out[:, :19, :, :] 
 
-            # detect people in the image
-            # returns the bounding boxes for the detected objects
-            boxes, weights = self._hog.detectMultiScale(frame, winStride=(2,2))
-            boxes = Scanner.find_largest(boxes, weights)
-            if boxes:
-                largest_box = boxes[0]
+            assert(len(BODY_PARTS) == out.shape[1])
 
-                self.largest_box = largest_box
+            points = []
+            for i in range(len(BODY_PARTS)):
+                    # Slice heatmap of corresponging body's part.
+                heatMap = out[0, i, :, :]
 
-                # test for actions:
-                self.test_for_action()
-            else:
-                self.largest_box = None
-            boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
-
-            for (xA, yA, xB, yB) in boxes:
-                # display the detected box in the colour picture
-                cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
+                # Originally, we try to find all the local maximums. To simplify a sample
+                # we just find a global one. However only a single pose at the same time
+                # could be detected this way.
+                _, conf, _, point = cv2.minMaxLoc(heatMap)
+                x = (360 * point[0]) / out.shape[3]
+                y = (240 * point[1]) / out.shape[2]
+                # Add a point if it's confidence is higher than threshold.
+                points.append((int(x), int(y)) if conf > threshold else None)
 
 
-            # Display the resulting frame
+            for pair in POSE_PAIRS:
+                partFrom = pair[0]
+                partTo = pair[1]
+                assert(partFrom in BODY_PARTS)
+                assert(partTo in BODY_PARTS)
+
+                idFrom = BODY_PARTS[partFrom]
+                idTo = BODY_PARTS[partTo]
+
+                if points[idFrom] and points[idTo]:
+                    cv2.line(frame, points[idFrom], points[idTo], (0, 255, 0), 3)
+                    cv2.ellipse(frame, points[idFrom], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+                    cv2.ellipse(frame, points[idTo], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+            self.cur_points = points
+            self.find_center_of_person()
+        
+            t, _ = net.getPerfProfile()
+            #print(points[BODY_PARTS["Nose"]])
+            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+
+
+            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            
+            #cv2.ellipse(frame, (int(self.frame_center_x + self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            #cv2.ellipse(frame, (int(self.frame_center_x - self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            #cv2.ellipse(frame, (10, int(self.frame_center_y + self.jump_thresh)), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+
+            #right thresh
+            cv2.line(frame, (int(self.frame_center_x + self.left_right_thresh),50),\
+             (int(self.frame_center_x + self.left_right_thresh),250), (255,255,255), 3)
+            #left thresh
+            cv2.line(frame, (int(self.frame_center_x - self.left_right_thresh),50),\
+             (int(self.frame_center_x - self.left_right_thresh),250), (255,255,255), 3)
+            #jump thresh
+            cv2.line(frame, (50, int(self.frame_center_y - self.jump_thresh)),\
+             (250,int(self.frame_center_y - self.jump_thresh)), (255,255,255), 3)
+            #crouch thresh
+    
+            cv2.line(frame, (50, int(self.frame_center_y + self.crouch_thresh)),\
+             (250,int(self.frame_center_y + self.crouch_thresh)), (255,255,255), 3)
+
             frame = cv2.resize(frame, (720, 480))
             self.frame = frame
 
             if self.is_calibrating:
-                frame = cv2.addWeighted(frame, 0.4, self.overlay, 0.1, 0)
+                print("time: ", time.localtime().tm_sec - self.time_elapsed_calibration)
+                frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
                 if self.is_centered():
                     if time.localtime().tm_sec - self.time_elapsed_calibration >= 10:  
                         self.is_calibrating = False
                         self.calibrate()
                 else:
                     self.time_elapsed_calibration = time.localtime().tm_sec
+            self.test_for_action()
 
             self.frame = frame
-
 
 
     def release(self):
         self._cap.release()
         cv2.destroyAllWindows()
-
-
-    @staticmethod
-    def find_largest(boxes, weights):
-        if len(boxes) == 0:
-            return boxes
-        return [max(zip(boxes, weights), key = lambda x:x[1])[0]]
-
 
 
 def overlay(self):
