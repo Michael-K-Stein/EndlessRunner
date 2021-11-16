@@ -23,7 +23,7 @@ class Scanner:
         self.callback = callback
         self.last_action = ""
         self.is_running = True
-        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
+        self.overlay = cv2.resize(cv2.imread('assets/images/Outline-body.png'), (720, 480))
         self.is_calibrating = True
         self.time_elapsed_calibration = time.localtime().tm_sec-3
 
@@ -166,8 +166,6 @@ class Scanner:
     def release(self):
         self._cap.release()
         cv2.destroyAllWindows()
-
-
 
     @staticmethod
     def get_surface(box):
