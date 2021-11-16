@@ -236,12 +236,13 @@ class DinoRender(ShowBase):
 
         self.birds = []
         self.boxes = []
+
         self.hearts_counter = 3
         self.hearts_obj = [
-            OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+            OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
             OnscreenImage(image='heart2.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-            OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
-        ][::-1]
+            OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
+        ]
 
         for x in self.hearts_obj:
             x.setTransparency(1)
@@ -571,8 +572,9 @@ class DinoRender(ShowBase):
             print(self.hit)
         self.hit_text.text = 'Hits: ' + str(self.hit)
         if self.hearts_counter > 1:
-            self.hearts_obj[self.hearts_counter - 1].setImage('broken_heart.png')
-            self.hearts_obj[self.hearts_counter - 1].setTransparency(1)
+            curr_heart = self.hearts_obj[self.hearts_counter - 1]
+            curr_heart.setImage('broken_heart.png')
+            curr_heart.setTransparency(1)
         else:
             self.show_menu()
         self.hearts_counter -= 1
