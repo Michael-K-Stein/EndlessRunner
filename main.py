@@ -115,11 +115,12 @@ class Game(ShowBase):
         self.background_music.stop()
 
     def start_game(self):
+        if "session" in dir(self):
+            for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"]:
+                node.remove_node()
         self.create_game_session()
         self.gameMenu.hide()
         self.session["birds_x_speed"] = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
-        for node in self.session["birds"] + self.session["boxes"]:
-            node.remove_node()
 
         for x in self.session["hearts_obj"]:
             x.setTransparency(1)
