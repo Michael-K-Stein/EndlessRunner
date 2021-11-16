@@ -1,11 +1,15 @@
-# import the necessary packages
 import numpy as np
 import cv2
 import threading
+import time
+
 DEFAULT_HEIGHT = 175
-DEFAULT_JUMP_THRESH = 5
+DEFAULT_JUMP_THRESH = 10
 DEFAULT_CROUCH_THRESH = 20
 DEFAULT_LEFT_RIGHT_THRESH = 30
+DEFAULT_CALIB_LEFTRIGHT = 50
+DEFAULT_CALIB_HEIGHT = 300
+
 class Scanner:
 
     def __init__(self, callback) -> None:
@@ -19,6 +23,9 @@ class Scanner:
         self.callback = callback
         self.last_action = ""
         self.is_running = True
+        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
+        self.is_calibrating = True
+        self.time_elapsed_calibration = time.localtime().tm_sec-3
 
         # initialize the HOG descriptor/person detector
         self._hog = cv2.HOGDescriptor()
@@ -75,7 +82,15 @@ class Scanner:
         img_res = cv2.bitwise_and(img, img, mask = mask_gray)
 
         cv2.imshow("res", img_res)
-
+    def is_centered(self):
+        if self.largest_box is None:
+            return False
+        (x, y, w, h) = self.largest_box
+        frame_x, frame_y, _ = self.frame.shape
+        frame_x//=2
+        frame_y//=2
+        return abs(x + w // 2 - frame_x//2) < DEFAULT_CALIB_LEFTRIGHT and\
+            abs(y + h // 2 - frame_y//2) < DEFAULT_CALIB_HEIGHT
     def run_scanner(self):
         self.thread = threading.Thread(target=self.scan)
         self.thread.start()
@@ -109,7 +124,8 @@ class Scanner:
 
                 # test for actions:
                 self.test_for_action()
-
+            else:
+                self.largest_box = None
             boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
 
             for (xA, yA, xB, yB) in boxes:
@@ -119,6 +135,19 @@ class Scanner:
 
             # Display the resulting frame
             frame = cv2.resize(frame, (720, 480))
+            self.frame = frame
+
+            if self.is_calibrating:
+                frame = cv2.addWeighted(frame,0.4,self.overlay,0.1,0)
+                if self.is_centered():
+                    print("centered")
+                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 10:  
+                        self.is_calibrating = False
+                        self.calibrate()
+                        print("yes")
+                else:
+                    self.time_elapsed_calibration = time.localtime().tm_sec
+            print(self.time_elapsed_calibration, "     ",time.localtime().tm_sec )   
             self.frame = frame
             #cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
