@@ -159,8 +159,8 @@ class DinoRender(ShowBase):
         self.init_ralph()
         self.cont_tunnel()
 
-        self.accept("arrow_left", self.rotate, ["left"])
-        self.accept("arrow_right", self.rotate, ["right"])
+        self.accept("arrow_left", self.rotate, ["LEFT"])
+        self.accept("arrow_right", self.rotate, ["RIGHT"])
 
         self.accept("space", self.jump)
         self.accept("lshift", self.tuck)
@@ -195,11 +195,18 @@ class DinoRender(ShowBase):
                    pos = (0, 0, -0.2),
                    parent = self.gameMenu,
                    scale = 0.07)"""
-        DirectButton(text = "Calibrate",
-                   command = self.scanner.calibrate,
-                   pos = (0, 0, -0.4),
-                   parent = self.gameMenu,
-                   scale = 0.07)
+        if self.DEBUG:
+            DirectButton(text = "~Calibrate~DEBUG MODE",
+                    command = None,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
+        else:
+            DirectButton(text = "Calibrate",
+                    command = self.scanner.calibrate,
+                    pos = (0, 0, -0.4),
+                    parent = self.gameMenu,
+                    scale = 0.07)
         DirectButton(text = "Quit",
                    command = self.quit_game,
                    pos = (0, 0, -0.6),
@@ -343,11 +350,25 @@ class DinoRender(ShowBase):
             self.tucknt()
 
     def rotate(self, lane):
-        self.ralph.lane = lane
 
         if self.DEBUG:
             print(f"Rotate {lane}")
             print(f"Lane: {self.ralph.lane}")
+
+        if self.ralph.lane == -1 and lane == "RIGHT":
+            lane = 0
+        elif self.ralph.lane == 0 and lane == "RIGHT":
+            lane = 1
+        elif self.ralph.lane == 1 and lane == "LEFT":
+            lane = 0
+        elif self.ralph.lane == 0 and lane == "LEFT":
+            lane = -1
+        else:
+            return
+
+        self.ralph.lane = lane
+
+        
 
         if self.ralph.lane == -1:
             self.ralph.setPos(*RALPH_LEFT)
