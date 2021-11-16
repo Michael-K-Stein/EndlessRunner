@@ -5,7 +5,7 @@ import threading
 DEFAULT_HEIGHT = 175
 DEFAULT_JUMP_THRESH = 10
 DEFAULT_CROUCH_THRESH = 20
-DEFAULT_LEFT_RIGHT_THRESH = 20
+DEFAULT_LEFT_RIGHT_THRESH = 30
 class Scanner:
 
     def __init__(self, callback) -> None:
@@ -18,6 +18,7 @@ class Scanner:
         self.left_right_thresh = DEFAULT_LEFT_RIGHT_THRESH
         self.callback = callback
         self.last_action = ""
+        self.is_running = True
 
         # initialize the HOG descriptor/person detector
         self._hog = cv2.HOGDescriptor()
@@ -27,6 +28,12 @@ class Scanner:
 
         # open webcam video stream
         self._cap = cv2.VideoCapture(0)
+        self.frame = self._cap.read()[1]
+        self.frame = cv2.resize(self.frame, (720, 480))
+    
+    def stop(self):
+        self.is_running = False
+    
 
     def calibrate(self):
         x, y, w, h = self.largest_box
@@ -72,13 +79,9 @@ class Scanner:
     def run_scanner(self):
         self.thread = threading.Thread(target=self.scan)
         self.thread.start()
-
-    def stop(self):
-        self.is_alive = False
-
+    
     def scan(self):
-        self.is_alive = True
-        while self.is_alive:
+        while self.is_running:
             # Capture frame-by-frame
             ret, frame = self._cap.read()
             frame=cv2.flip(frame, 1)
@@ -116,7 +119,8 @@ class Scanner:
 
             # Display the resulting frame
             frame = cv2.resize(frame, (720, 480))
-            cv2.imshow('frame',frame)
+            self.frame = frame
+            #cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 self.stop()
             if cv2.waitKey(1) & 0xFF == ord(' '):
@@ -146,6 +150,9 @@ class Scanner:
         if len(boxes) == 0:
             return boxes
         return [max(boxes, key = Scanner.get_surface)]
+
+    def kill_me(self):
+        self.kill = True
 
 if __name__ == "__main__":
     scan = Scanner(lambda action: print(action))
