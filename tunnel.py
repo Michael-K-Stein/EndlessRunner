@@ -39,11 +39,12 @@ def cont_tunnel(self):
     self.tunnelMove.start()
 
 def spawner_timer(self, task):
-    if (int(self.bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
-        if random.randint(0,1) % 2 == 0:
-            spawner(self, ObsticleType.BIRD, random.randint(0, 2))
-        else:
-            spawner(self, ObsticleType.BOX, random.randint(0, 2))
+    if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
+        for _ in range(random.randint(1, 3)):
+            if random.randint(0,1) % 2 == 0:
+                spawner(self, ObsticleType.BIRD, random.randint(0, 2))
+            else:
+                spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
     return Task.cont
 
