@@ -60,7 +60,7 @@ def add_tunnel_props(self, tunnel):
 
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
-        for _ in range(random.randint(1, 3)):
+        for _ in range(random.randint(1, 4)):
             if random.randint(0,1) % 2 == 0:
                 spawner(self, ObsticleType.BIRD, random.randint(0, 2))
             else:
