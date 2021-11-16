@@ -41,6 +41,8 @@ class Game(ShowBase):
         self.ralph_base_x = self.ralph.getX()
         self.ralph_rot_multiplier = 0
 
+        self.high_score = 0
+
         # Init scanner
         if not self.DEBUG:
             self.scanner = scan.Scanner(self.scanner_callback)
@@ -88,7 +90,8 @@ class Game(ShowBase):
         DirectFrame(parent=self.gameMenu, image = "assets/models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
         # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
-                  OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29))]
+                  OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
+                  OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
         if not self.DEBUG:
@@ -203,6 +206,8 @@ class Game(ShowBase):
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
+        if self.session["score"] > self.high_score:
+            self.high_score = self.session["score"]
 
         # if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
         #     self.session["last_tunnel_remodel_time"] = self.session["time"]
