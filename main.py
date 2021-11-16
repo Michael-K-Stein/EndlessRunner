@@ -2,6 +2,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Fog
 from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
+from direct.gui.OnscreenImage import OnscreenImage
 from direct.gui.DirectGui import *
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.MetaInterval import Sequence
@@ -113,7 +114,10 @@ class DinoRender(ShowBase):
     def show_menu(self):
         self.pause_game()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
-        DirectLabel(text="Ha'ag", parent=self.gameMenu, scale=0.1, pos = (0,0,0.2))
+        DirectFrame(parent=self.gameMenu, image = "models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
+        #DirectLabel(text="Ha'ag", parent=self.gameMenu, scale=0.1, pos = (0,0,0.2))title.png
+        OnscreenImage(parent=self.gameMenu, image = 'models/title2.PNG', pos = (0,0,0.3), scale=0.3)
+
         DirectButton(text = "Restart",
                    command = self.click_restart,
                    pos = (0, 0, -0.2),
