@@ -1,8 +1,5 @@
-from random import random
 from direct.showbase.PythonUtil import Enum
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import Fog
-from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.OnscreenImage import OnscreenImage
 from direct.gui.DirectGui import *
@@ -12,21 +9,19 @@ from direct.interval.LerpInterval import LerpFunc
 from direct.interval.FunctionInterval import Func
 from direct.actor.Actor import Actor
 from direct.task import Task
+from panda3d.core import Fog
+from panda3d.core import TextNode
 from panda3d.core import Texture, CardMaker
-from panda3d.core import WindowProperties
 from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
-
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
-from panda3d.core import CollisionHandlerPusher
 from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox
 from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 import random
-import numpy
 import math
 import scan
 import cv2
@@ -71,105 +66,46 @@ MAGIC_POINT_THIRTY_FIVE = 0.35
 
 bird_spawner_timer = ClockObject()
 game_speed_timer = ClockObject()
-
-
-class TYPE(Enum):
+class ObsticleType(Enum):
     BIRD = 1,
     BOX = 2,
     NULL = 0
-
-class DinoRender(ShowBase):
-    # Macro-like function used to reduce the amount to code needed to create the on screen instructions
-    def generate_label_text(self, i, text):
-        return OnscreenText(text=text, parent=base.a2dTopLeft, scale=.05,
-                            pos=(0.06, -.065 * i), fg=(1, 1, 1, 1),
-                            align=TextNode.ALeft)
-
-    def handle_collision(self, entry):
-        #print('=== This is a collision message: ===')
-        #print(entry)
-        #print('== End collision message ===')
-        self.player_hit()
-
-
+class Game(ShowBase):
     def __init__(self):
-        # Initialize the ShowBase class from which we inherit, which will create a window and set up everything we need for rendering into it.
         ShowBase.__init__(self)
 
+        self.DEBUG = False
         if "debug" in sys.argv:
             self.DEBUG = True
-        else:
-            self.DEBUG = False
 
         self.init_collision_detection()
+        self.init_music()
 
-        self.background_music = base.loader.loadSfx('./music.wav')
-        self.background_music.setLoop(True)
-        self.background_music.play()
-        self.playback_speed = 1
+        # self.birds = []
+        # self.boxes = []
+        # self.score = 0
+        # self.time = 0
+        # self.score_last_update_time = 0
 
-        self.birds = []
-        self.boxes = []
-
-        self.score = 0
-        self.time = 0
-        self.score_last_update_time = 0
-
-        # Standard initialization stuff
-        # Standard title that's on screen in every tutorial
-        self.title = OnscreenText(text="Ha'ag", style=1,
-            fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
-            align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
-
-        self.hearts_counter = 3
-        # self.hearts_obj = [
-        #     OnscreenImage(image='heart2.png', pos=(0.9, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
-        #     OnscreenImage(image='heart2.png', pos=(1.05, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
-        #     OnscreenImage(image='heart2.png', pos=(1.2, 1, 0.9), scale=0.08, parent=base.a2dTopRight)
-        # ]
-
-        # self.hearts_obj = [
-        #     OnscreenImage(image='heart2.png', pos=(-0.05, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
-        #     OnscreenImage(image='heart2.png', pos=(-0.20, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
-        #     OnscreenImage(image='heart2.png', pos=(-0.35, 1, 0.9), scale=0.08, parent=base.a2dTopRight)
-        # ]
-
-        self.hit_text = OnscreenText(text="Hits: 0", style=1,
-            fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft,
-            align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
-
+        self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
+        self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
 
         # disable mouse control so that we can place the camera
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
-
-        # World specific-code
-        self.fog = Fog('distanceFog')
-        self.fog.setColor(0, 0, 0)
-        self.fog.setExpDensity(FOG_EXPIRY_DENSITY)
-        # We will set fog on render which means that everything in our scene will
-        # be affected by fog. Alternatively, you could only set fog on a specific
-        # object/node and only it and the nodes below it would be affected by
-        # the fog.
-        render.setFog(self.fog)
-
-        # Load the tunel and start the tunnel
+        
         self.init_tunnel()
+        self.init_fog()
         self.init_ralph()
         self.cont_tunnel()
 
-        self.accept("arrow_left", self.rotate, ["left"])
-        self.accept("arrow_right", self.rotate, ["right"])
+        self.player = Player(self.DEBUG, self.set_ralph_pos)
+        self.player.calibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
 
-        self.accept("space", self.jump)
-        self.accept("lshift", self.tuck)
-        self.accept("rshift", self.tucknt)
-        self.accept("r", self.quit_game)
-        self.accept("p", lambda: self.scanner_callback("JUMP"))
-        self.accept("l", self.show_menu)
-        self.accept('enter', self.kill_all)
+        self.register_keys()
 
+        # Where ralph is if he were standing (for laning)
         self.ralph_base_y = self.ralph.getY()
         self.ralph_base_x = self.ralph.getX()
         self.ralph_rot_multiplier = 0
@@ -183,18 +119,38 @@ class DinoRender(ShowBase):
 
         self.show_menu()
 
+    def create_game_session(self):
+        self.session = {
+            "birds": [],
+            "boxes": [],
+            "time": 0,
+            "score": 0,
+            "score_last_update_time": 0,
+            "hearts_counter": 3,
+            "birds_x_speed": 0,
+            "playback_speed": 1,
+            "hearts_obj": [
+                OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                 OnscreenImage(image='heart2.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                  OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)][::-1]}
+
+    def register_keys(self):
+        self.accept("arrow_left", self.rotate, ["left"])
+        self.accept("arrow_right", self.rotate, ["right"])
+        self.accept("space", self.player.start_jump)
+        self.accept("lshift", self.tuck)
+        self.accept("rshift", self.tucknt)
+        self.accept("r", self.quit_game)
+        self.accept("p", self.scanner_callback, ["JUMP"])
+        self.accept("l", self.show_menu)
+
     def show_menu(self):
-        self.pause_game()
+        self.stop_tasks()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
         DirectFrame(parent=self.gameMenu, image = "models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
         OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
         OnscreenImage(parent=self.gameMenu, image = 'models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
-        """DirectButton(text = "Restart",
-                   command = self.click_restart,
-                   pos = (0, 0, -0.2),
-                   parent = self.gameMenu,
-                   scale = 0.07)"""
         DirectButton(text = "Calibrate",
                    command = self.scanner.calibrate,
                    pos = (0, 0, -0.4),
@@ -206,55 +162,38 @@ class DinoRender(ShowBase):
                    parent = self.gameMenu,
                    scale = 0.07)
 
-    def resume_game(self):
+    def start_tasks(self):
         self.tasks_running = True
         self.taskMgr.add(self.spawner_timer, "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
+        self.background_music.play()
 
-    def pause_game(self):
+    def stop_tasks(self):
         self.tasks_running = False
         self.taskMgr.remove("Spawner")
         self.taskMgr.remove("GameLoop")
         self.taskMgr.remove("GameSpeedAcceleration")
         self.background_music.stop()
 
-    def click_restart(self):
+    def start_game(self):
+        self.create_game_session()
         self.gameMenu.hide()
-        self.player = Player(self.DEBUG, self.set_ralph_pos)
-        self.player.calibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
-        self.birds_x_speed = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
-        for node in self.birds + self.boxes:
+        self.session["birds_x_speed"] = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
+        for node in self.session["birds"] + self.session["boxes"]:
             node.remove_node()
 
-        self.birds = []
-        self.boxes = []
-        self.hearts_counter = 3
-        self.hearts_obj = [
-            OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-            OnscreenImage(image='heart2.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-            OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
-        ][::-1]
-
-        for x in self.hearts_obj:
+        for x in self.session["hearts_obj"]:
             x.setTransparency(1)
 
-        self.score = 0
-        self.time = 0
-
-        self.resume_game()
-        self.background_music.play()
-        self.playback_speed = 1
-        self.hit = 0
+        self.start_tasks()
+        self.init_music()
+        self.session["playback_speed"] = 1
+        self.session["hit"] = 0
 
     def quit_game(self):
         self.scanner.stop()
-        sys.exit()
-
-    def exit_game(self):
-        self.scanner.release()
         sys.exit(0)
-
 
     def init_collision_detection(self):
         self.cTrav = CollisionTraverser()
@@ -268,10 +207,26 @@ class DinoRender(ShowBase):
         self.notifier.addAgainPattern('%fn-again-%in')
 
         # magic. Do not touch!
-        self.accept('box-into-ralph', self.handle_collision)
-        self.accept('ralph-into-box', self.handle_collision)
-        self.accept('ralph-into-bird', self.handle_collision)
-        self.accept('bird-into-ralph', self.handle_collision)
+        # self.accept('box-into-ralph', self.handle_collision)
+        # self.accept('ralph-into-box', self.handle_collision)
+        # self.accept('ralph-into-bird', self.handle_collision)
+        # self.accept('bird-into-ralph', self.handle_collision)
+
+        self.accept('box-into-ralph', lambda _: self.player_hit)
+        self.accept('ralph-into-box', lambda _: self.player_hit)
+        self.accept('ralph-into-bird', lambda _: self.player_hit)
+        self.accept('bird-into-ralph', lambda _: self.player_hit)
+
+    def init_music(self):
+        self.background_music = base.loader.loadSfx('./music.wav')
+        self.background_music.setLoop(True)
+        self.playback_speed = 1
+    
+    def init_fog(self):
+        self.fog = Fog('distanceFog')
+        self.fog.setColor(0, 0, 0)
+        self.fog.setExpDensity(FOG_EXPIRY_DENSITY)
+        render.setFog(self.fog)
 
     def overlay(self):
         dr = self.win.makeDisplayRegion()
@@ -323,13 +278,11 @@ class DinoRender(ShowBase):
 
         return task.cont
 
-
-
     def scanner_callback(self, action):
         if action == "JUMP":
             if not self.tasks_running:
-                self.click_restart()
-            self.jump()
+                self.start_game()
+            self.player.start_jump()
         elif action == "TOOK":
             self.tuck()
         elif action == "CENTER":
@@ -343,7 +296,16 @@ class DinoRender(ShowBase):
             self.tucknt()
 
     def rotate(self, lane):
-        self.ralph.lane = lane
+        if lane == "right":
+            self.ralph.lane += 1
+            if self.ralph.lane > 1:
+                self.ralph.lane = 1
+        elif lane == "left":
+            self.ralph.lane -= 1
+            if self.ralph.lane < -1:
+                self.ralph.lane = -1
+        else:
+            self.ralph.lane = lane
 
         if self.DEBUG:
             print(f"Rotate {lane}")
@@ -367,46 +329,36 @@ class DinoRender(ShowBase):
         self.ralph_base_y = self.ralph.getY()
         self.ralph_base_x = self.ralph.getX()
 
-    def jump(self, key, value):
-        self.ralph.setPos(self.ralph, 0, 0, 2)
-
     def game_loop(self, task):
         self.player.update(globalClock.getDt())
-        for box in self.boxes:
-            box.setPos(box, self.birds_x_speed / (7*5), 0, 0)
+        for box in self.session["boxes"]:
+            box.setPos(box, self.session["birds_x_speed"] / (7*5), 0, 0)
+            if self.is_out_of_frame(box):
+                self.remove_obj(box)
 
-        for bird in self.birds:
-            #  -1.5, -0.05, 0 | right
-            #  -1.5, -0.05, 0 | left
-            #bird.setPos(bird, self.birds_x_speed, 0, 0)
-            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getZ()) / 10)#-0.1
+        for bird in self.session["birds"]:
+            bird.setPos(bird, self.session["birds_x_speed"], 0, math.sin(bird.getZ()) / 10)#-0.1
+            if self.is_out_of_frame(bird):
+                self.remove_obj(bird)
+            #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
         
-        self.time += globalClock.getDt()
-        if self.time > self.score_last_update_time + 0.2:
-            self.score_last_update_time = self.time
-            self.score += -self.birds_x_speed * 0.2
-        self.hit_text.text = 'Score: ' + str(int(self.score))
+
+        self.session["time"] += globalClock.getDt()
+        if self.session["time"] > self.session["score_last_update_time"] + 0.2:
+            self.session["score_last_update_time"] = self.session["time"]
+            self.session["score"] += -self.session["birds_x_speed"] * 0.2
+        self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
 
         return Task.cont
 
     def game_speed_acceleration(self, task):
         if (int(game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:
-            self.birds_x_speed += BIRDS_X_ACCELERATION
-            self.playback_speed += 0.002
+            self.session["birds_x_speed"] += BIRDS_X_ACCELERATION
+            self.session["playback_speed"] += 0.002
             self.background_music.setPlayRate(self.playback_speed)
             # self.birds_y_speed += BIRDS_X_ACCELERATION
             game_speed_timer.reset()
         return Task.cont
-
-    def jump(self):
-        self.player.start_jump()
-
-    def tuck(self):
-        self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
-
-    def tucknt(self):
-        self.ralph.setScale(RALPH_BASE_SCALE,0.10,RALPH_BASE_SCALE)
-        self.ralph.setScale(self.ralph, 1, 1, 1.2)
 
     def set_ralph_pos(self, x, y):
         self.ralph.setPos(self.ralph_base_x + ((y/MAGIC_RALPH_LOCATION_SCALE_FACTOR)*self.ralph_rot_multiplier), (y/MAGIC_RALPH_LOCATION_SCALE_FACTOR) + self.ralph_base_y, 5.5)
@@ -416,9 +368,7 @@ class DinoRender(ShowBase):
         self.tunnel = [None] * 4
 
         for x in range(4):
-            # Load a copy of the tunnel
             self.tunnel[x] = loader.loadModel('models/tunnel')
-            # The front segment needs to be attached to render
             if x == 0:
                 self.tunnel[x].reparentTo(render)
             # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
@@ -436,7 +386,6 @@ class DinoRender(ShowBase):
         self.ralph.setHpr(*RALPH_CENTER_ROT)
         self.ralph.setH(self.ralph, 180)
         self.ralph.loop('run')
-        # Hanich 17 - yes it's a crime against humanity, deal with it! btw - -1 left, 0 center, 1 right
         self.ralph.__dict__['lane'] = 0
 
         self.ralph.collider = self.ralph.attachNewNode(CollisionNode('ralph'))
@@ -462,8 +411,7 @@ class DinoRender(ShowBase):
         self.tunnel[3].setZ(-TUNNEL_SEGMENT_LENGTH)
         self.tunnel[3].setScale(1)
 
-        # Set up the tunnel to move one segment and then call contTunnel again
-        # to make the tunnel move infinitely
+        # Set up the tunnel to move one segment and then call contTunnel again to make the tunnel move infinitely
         self.tunnelMove = Sequence(
             LerpFunc(self.tunnel[0].setZ,
                      duration=TUNNEL_TIME,
@@ -476,16 +424,16 @@ class DinoRender(ShowBase):
     def spawner_timer(self, task):
         if (int(bird_spawner_timer.getRealTime()) + 1) % BIRD_SPAWN_INTERVAL_SECONDS == 0:
             if random.randint(0,1) % 2 == 0:
-                self.spawner(TYPE.BIRD, random.randint(0, 2))
+                self.spawner(ObsticleType.BIRD, random.randint(0, 2))
             else:
-                self.spawner(TYPE.BOX, random.randint(0, 2))
+                self.spawner(ObsticleType.BOX, random.randint(0, 2))
             bird_spawner_timer.reset()
         return Task.cont
 
     def spawner(self, type, lane):
-        if type is TYPE.BIRD:
+        if type is ObsticleType.BIRD:
             self.spawn_bird(lane)
-        elif type is TYPE.BOX:
+        elif type is ObsticleType.BOX:
             self.spawn_box(lane)
 
     def spawn_bird(self, lane):
@@ -500,8 +448,7 @@ class DinoRender(ShowBase):
         if self.DEBUG:
             col.show()
         self.cTrav.addCollider(col, self.notifier)
-
-        self.birds.append(bird)
+        self.session["birds"].append(bird)
 
     def spawn_box(self, lane):
         box = self.loader.loadModel("models/crate")
@@ -515,50 +462,45 @@ class DinoRender(ShowBase):
         if self.DEBUG:
             col.show()
         self.cTrav.addCollider(col, self.notifier)
-
-        self.boxes.append(box)
-
-    def has_coliision(self, obj):
-        print('THIS SHOULD NEVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER EVER PRINT!!!')
-        print('If this does print, find references to func<has_coliision> (yes, i see the typo. TODO: fix typo)')
-        if obj.get_pos()[1] <= -0.408 and obj.get_pos()[1] > -0.42:
-            print("colission!!!")
-            return True
-        return False
+        self.session["boxes"].append(box)
 
     def remove_obj(self, obj):
         obj.remove_node()
-        if obj in self.birds:
-            self.birds.remove(obj)
+        if obj in self.session["birds"]:
+            self.session["birds"].remove(obj)
         else:
-            self.boxes.remove(obj)
+            self.session["boxes"].remove(obj)
 
-    def is_out(self, obj):
+    def is_out_of_frame(self, obj):
         if obj.get_pos()[1] <= -0.7:
             return True
         return False
 
-    def kill_all(self):
-        if self.DEBUG:
-            print('Killing all!')
-        self.scanner.kill_me()
-        exit(0)
+    # def handle_collision(self, entry):
+    #     self.player_hit()
+    
+    def tuck(self):
+        self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
+
+    def tucknt(self):
+        self.ralph.setScale(RALPH_BASE_SCALE,0.10,RALPH_BASE_SCALE)
+        self.ralph.setScale(self.ralph, 1, 1, 1.2)
 
     def player_hit(self):
-        self.hit += 1
+        self.session["hit"] += 1
         if self.DEBUG:
-            print(self.hit)
-        self.hit_text.text = 'Hits: ' + str(self.hit)
-        if self.hearts_counter > 1:
-            self.hearts_obj[self.hearts_counter - 1].setImage('broken_heart.png')
-            self.hearts_obj[self.hearts_counter - 1].setTransparency(1)
+            print(self.session["hit"])
+        self.hit_text.text = 'Hits: ' + str(self.session["hit"])
+        if self.session["hearts_counter"] > 1:
+            self.session["hearts_obj"][self.session["hearts_counter"] - 1].setImage('broken_heart.png')
+            self.session["hearts_obj"][self.session["hearts_counter"] - 1].setTransparency(1)
         else:
             self.show_menu()
-        self.hearts_counter -= 1
+        self.session["hearts_counter"] -= 1
 
-        for node in self.birds + self.boxes:
+        for node in self.session["birds"] + self.session["boxes"]:
             self.remove_obj(node)
         #self.hit_text.text = 'Hits: ' + str(self.hit)
     
-game = DinoRender()
+game = Game()
 game.run()
