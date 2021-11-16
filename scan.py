@@ -1,12 +1,10 @@
-import numpy as np
-import cv2
-import threading
-import time
+from basefile import *
+
 
 DEFAULT_HEIGHT = 175
 
 DEFAULT_JUMP_THRESH = 10
-DEFAULT_CROUCH_THRESH = 20
+DEFAULT_CROUCH_THRESH = 15
 DEFAULT_LEFT_RIGHT_THRESH = 30
 
 DEFAULT_CALIB_LEFTRIGHT = 50
@@ -25,7 +23,7 @@ class Scanner:
         self.callback = callback
         self.last_action = ""
         self.is_running = True
-        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
+        self.overlay = cv2.resize(cv2.imread('assets/images/Outline-body.png'), (720, 480))
         self.is_calibrating = True
         self.time_elapsed_calibration = time.localtime().tm_sec - 3
 
@@ -41,6 +39,8 @@ class Scanner:
         self.frame = cv2.resize(self.frame, (720, 480))
     
     def stop(self):
+        if not self.is_running:
+            return
         self.is_running = False
 
         self._cap.release()
@@ -59,6 +59,8 @@ class Scanner:
         self.defult_height = h
         self.center = x + w // 2
         print("calibrated")
+        action = "CALIBRATED"
+        self.callback(action)
 
     def test_for_action(self):
         action = None
@@ -149,6 +151,57 @@ class Scanner:
             return boxes
         return [max(zip(boxes, weights), key = lambda x:x[1])[0]]
 
+
+
+def overlay(self):
+    dr = self.win.makeDisplayRegion()
+    dr.setSort(20)
+
+    myCamera2d = NodePath(Camera('myCam2d'))
+    lens = OrthographicLens()
+    lens.setFilmSize(2, 2)
+    lens.setNearFar(-1000, 1000)
+    myCamera2d.node().setLens(lens)
+
+    myRender2d = NodePath('myRender2d')
+    myRender2d.setDepthTest(False)
+    myRender2d.setDepthWrite(False)
+    myCamera2d.reparentTo(myRender2d)
+    dr.setCamera(myCamera2d)
+
+    h, w, _ = self.scanner.frame.shape  # accessing the width and height of the frame
+    # setup panda3d scripting env (render, taskMgr, camera etc)
+    # set up a texture for (h by w) rgb image
+    self.tex = Texture()
+    self.tex.setup2dTexture(w, h, Texture.T_unsigned_byte,
+                    Texture.F_rgb)
+    # set up a card to apply the numpy texture
+    cm = CardMaker('card')
+    self.card = myRender2d.attachNewNode(cm.generate())
+    #self.card = cm.generate().reParent(self.render)
+
+    WIDTHRATIO = 1
+    HEIGHTRATIO = h/w
+    DEPTH = 1
+
+    self.card.setScale(WIDTHRATIO/2, DEPTH, HEIGHTRATIO)
+
+    self.card.setPos(-1, 0, -1)
+
+    self.card.setBin("fixed", 0)
+    self.card.setDepthTest(False)
+    self.card.setDepthWrite(False)
+
+    return self.taskMgr.add(lambda task: update_tex(self, task), 'video frame update')
+
+def update_tex(self, task):
+    # positive y goes down in openCV, so we must flip the y coordinates
+    flipped_frame = cv2.flip(self.scanner.frame, 0)
+    # overwriting the memory with new frame
+    self.tex.setRamImage(flipped_frame)
+    self.card.setTexture(self.tex)  # now apply it to the card
+
+    return task.cont
 
 if __name__ == "__main__":
     scan = Scanner(lambda action: print(action))
