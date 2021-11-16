@@ -3,9 +3,13 @@ from basefile import *
 # Code to initialize the tunnel
 def init_tunnel(self):
     self.tunnel = [None] * 4
+    remodel_tunnels(self, 0)
 
+def remodel_tunnels(self, v=-1):
+    if v == -1:
+        v = random.randint(0,3)
     for x in range(4):
-        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(x) + '/tunnel')
+        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
         if x == 0:
             self.tunnel[x].reparentTo(render)
         # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved

@@ -54,6 +54,7 @@ class Game(ShowBase):
             "boxes": [],
             "prizes": [],
             "time": 0,
+            "last_tunnel_remodel_time": 0,
             "score": 0,
             "score_last_update_time": 0,
             "hearts_counter": 3,
@@ -76,8 +77,9 @@ class Game(ShowBase):
 
     def show_menu(self):
         self.stop_tasks()
-        self.scanner = scan.Scanner(self.scanner_callback)
-        self.scanner.run_scanner()
+        if not self.DEBUG:
+            self.scanner = scan.Scanner(self.scanner_callback)
+            self.scanner.run_scanner()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
         DirectFrame(parent=self.gameMenu, image = "assets/models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
         # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
@@ -195,6 +197,10 @@ class Game(ShowBase):
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
+
+        if self.session["last_tunnel_remodel_time"] + 15 < self.session["time"]:
+            self.session["last_tunnel_remodel_time"] = self.session["time"]
+            remodel_tunnels(self)
 
         return Task.cont
 
