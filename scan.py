@@ -31,9 +31,10 @@ class Scanner:
         self.frame = self._cap.read()[1]
         self.frame = cv2.resize(self.frame, (720, 480))
     
-    def __del__(self):
+    def stop(self):
         self.is_running = False
     
+
     def calibrate(self):
         x, y, w, h = self.largest_box
         print(x,y,w,h)
@@ -60,7 +61,7 @@ class Scanner:
             action = "LEFT"
         else:
             action = "CENTER"
-        
+
         if action is not None:
             if self.last_action != action:
                 self.last_action = action
@@ -74,7 +75,7 @@ class Scanner:
         img_res = cv2.bitwise_and(img, img, mask = mask_gray)
 
         cv2.imshow("res", img_res)
-        
+
     def run_scanner(self):
         self.thread = threading.Thread(target=self.scan)
         self.thread.start()
@@ -96,13 +97,13 @@ class Scanner:
             if boxes:
                 largest_box = boxes[0]
                 x, y, w, h = largest_box
-                
+
                 cropped_person = frame[y:y+h,x:x+w]
                 cropped_person = cv2.resize(cropped_person,(320,520))
 
                 #cv2.imshow("person",cropped_person)
                 self.largest_box = largest_box
-                
+
                 #finding shoes:
                 #self.find_shoes(cropped_person)
 
@@ -121,7 +122,7 @@ class Scanner:
             self.frame = frame
             #cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                self.stop()
             if cv2.waitKey(1) & 0xFF == ord(' '):
                 self.calibrate()
 
@@ -130,7 +131,15 @@ class Scanner:
         # finally, close the window
         cv2.destroyAllWindows()
         cv2.waitKey(1)
-    
+
+
+
+    def release(self):
+        self._cap.release()
+        cv2.destroyAllWindows()
+
+
+
     @staticmethod
     def get_surface(box):
         x, y, w, h = box
@@ -141,6 +150,9 @@ class Scanner:
         if len(boxes) == 0:
             return boxes
         return [max(boxes, key = Scanner.get_surface)]
+
+    def kill_me(self):
+        self.kill = True
 
 if __name__ == "__main__":
     scan = Scanner(lambda action: print(action))
