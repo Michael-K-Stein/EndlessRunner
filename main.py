@@ -451,7 +451,7 @@ class DinoRender(ShowBase):
 
         for x in range(4):
             # Load a copy of the tunnel
-            self.tunnel[x] = loader.loadModel('models/tunnel')
+            self.tunnel[x] = loader.loadModel('models/tunnels/tunnel' + str(x) + '/tunnel')
             # The front segment needs to be attached to render
             if x == 0:
                 self.tunnel[x].reparentTo(render)
