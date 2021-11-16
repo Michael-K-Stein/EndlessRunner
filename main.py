@@ -119,18 +119,24 @@ class DinoRender(ShowBase):
         # Standard title that's on screen in every tutorial
         self.title = OnscreenText(text="Ha'ag", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
-            align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
+            align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
 
         self.hearts_counter = 3
-        self.hearts_obj = [
-            OnscreenImage(image='heart2.png', pos=(0.9, 1, 0.9), scale=0.08),
-            OnscreenImage(image='heart2.png', pos=(1.05, 1, 0.9), scale=0.08),
-            OnscreenImage(image='heart2.png', pos=(1.2, 1, 0.9), scale=0.08)
-        ]
+        # self.hearts_obj = [
+        #     OnscreenImage(image='heart2.png', pos=(0.9, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
+        #     OnscreenImage(image='heart2.png', pos=(1.05, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
+        #     OnscreenImage(image='heart2.png', pos=(1.2, 1, 0.9), scale=0.08, parent=base.a2dTopRight)
+        # ]
+
+        # self.hearts_obj = [
+        #     OnscreenImage(image='heart2.png', pos=(-0.05, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
+        #     OnscreenImage(image='heart2.png', pos=(-0.20, 1, 0.9), scale=0.08, parent=base.a2dTopRight),
+        #     OnscreenImage(image='heart2.png', pos=(-0.35, 1, 0.9), scale=0.08, parent=base.a2dTopRight)
+        # ]
 
         self.hit_text = OnscreenText(text="Hits: 0", style=1,
-            fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
-            align=TextNode.ARight, pos=(0, 0), scale=.08)
+            fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft,
+            align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
 
 
         # disable mouse control so that we can place the camera
@@ -225,10 +231,13 @@ class DinoRender(ShowBase):
         self.boxes = []
         self.hearts_counter = 3
         self.hearts_obj = [
-            OnscreenImage(image='heart2.png', pos=(0.9, 1, 0.9), scale=0.08),
-            OnscreenImage(image='heart2.png', pos=(1.05, 1, 0.9), scale=0.08),
-            OnscreenImage(image='heart2.png', pos=(1.2, 1, 0.9), scale=0.08)
-        ]
+            OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+            OnscreenImage(image='heart2.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+            OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
+        ][::-1]
+
+        for x in self.hearts_obj:
+            x.setTransparency(1)
 
         self.score = 0
         self.time = 0
@@ -541,6 +550,7 @@ class DinoRender(ShowBase):
         self.hit_text.text = 'Hits: ' + str(self.hit)
         if self.hearts_counter > 1:
             self.hearts_obj[self.hearts_counter - 1].setImage('broken_heart.png')
+            self.hearts_obj[self.hearts_counter - 1].setTransparency(1)
         else:
             self.show_menu()
         self.hearts_counter -= 1
