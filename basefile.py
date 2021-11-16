@@ -23,9 +23,12 @@ from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 import random
 import math
-import cv2
 import sys
 from enum import Enum
+import numpy as np
+import cv2
+import threading
+import time
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
