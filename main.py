@@ -377,7 +377,7 @@ class DinoRender(ShowBase):
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, self.birds_x_speed, 0, -0.0)#-0.1
+            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getPosX()) / 10)#-0.1
         
         self.time += globalClock.getDt()
         if self.time > self.score_last_update_time + 0.2:
