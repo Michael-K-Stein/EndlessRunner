@@ -56,7 +56,11 @@ class Scanner:
         self.release()
     
     def find_height_of_person(self):
-        self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
+        try:
+            self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
+        except TypeError:
+            self.callback("CAMERA")
+            self.is_centered = False
 
     def find_center_of_person(self):
         sum_x, sum_y, count = 0, 0, 0

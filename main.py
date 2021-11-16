@@ -170,7 +170,9 @@ class Game(ShowBase):
             self.labels[0].setPos(0,-0.2)
             self.labels[0].setScale(0.1)
             self.labels[1].setText("")
-
+        elif action == "CAMERA":
+            self.labels[0].setText("Camera can't fully see you")
+            
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
