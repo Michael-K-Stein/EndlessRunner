@@ -58,7 +58,7 @@ class Scanner:
         self.defult_y = y + h // 2
         self.defult_height = h
         self.center = x + w // 2
-        print("calibrated")
+
         action = "CALIBRATED"
         self.callback(action)
 
