@@ -130,9 +130,9 @@ class Game(ShowBase):
             "birds_x_speed": 0,
             "playback_speed": 1,
             "hearts_obj": [
-                OnscreenImage(image='heart2.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                 OnscreenImage(image='heart2.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                  OnscreenImage(image='heart2.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)][::-1]}
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                  OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)][::-1]}
 
     def register_keys(self):
         self.accept("arrow_left", self.rotate, ["left"])
@@ -147,9 +147,9 @@ class Game(ShowBase):
     def show_menu(self):
         self.stop_tasks()
         self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
-        DirectFrame(parent=self.gameMenu, image = "models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
+        DirectFrame(parent=self.gameMenu, image = "assets/models/background.jpg", sortOrder = (-1), pos=(0.076,0,0), scale=3.7)
         OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
-        OnscreenImage(parent=self.gameMenu, image = 'models/title2.PNG', pos = (0,0,0.3), scale=0.3)
+        OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
         DirectButton(text = "Calibrate",
                    command = self.scanner.calibrate,
@@ -207,18 +207,13 @@ class Game(ShowBase):
         self.notifier.addAgainPattern('%fn-again-%in')
 
         # magic. Do not touch!
-        # self.accept('box-into-ralph', self.handle_collision)
-        # self.accept('ralph-into-box', self.handle_collision)
-        # self.accept('ralph-into-bird', self.handle_collision)
-        # self.accept('bird-into-ralph', self.handle_collision)
-
-        self.accept('box-into-ralph', lambda _: self.player_hit)
-        self.accept('ralph-into-box', lambda _: self.player_hit)
-        self.accept('ralph-into-bird', lambda _: self.player_hit)
-        self.accept('bird-into-ralph', lambda _: self.player_hit)
+        self.accept('box-into-ralph', self.handle_collision)
+        self.accept('ralph-into-box', self.handle_collision)
+        self.accept('ralph-into-bird', self.handle_collision)
+        self.accept('bird-into-ralph', self.handle_collision)
 
     def init_music(self):
-        self.background_music = base.loader.loadSfx('./music.wav')
+        self.background_music = base.loader.loadSfx('assets/music/music.wav')
         self.background_music.setLoop(True)
         self.playback_speed = 1
     
@@ -368,7 +363,7 @@ class Game(ShowBase):
         self.tunnel = [None] * 4
 
         for x in range(4):
-            self.tunnel[x] = loader.loadModel('models/tunnel')
+            self.tunnel[x] = loader.loadModel('assets/models/tunnel')
             if x == 0:
                 self.tunnel[x].reparentTo(render)
             # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
@@ -378,7 +373,7 @@ class Game(ShowBase):
 
     # initialize the runner
     def init_ralph(self):
-        self.ralph = Actor("models/ralph", {"run": "models/ralph-run", "walk": "models/ralph-walk"})
+        self.ralph = Actor("assets/models/ralph", {"run": "assets/models/ralph-run", "walk": "assets/models/ralph-walk"})
         self.ralph.reparentTo(render)
         self.ralph.setScale(.15, 0.10, 0.15)
         self.ralph.setScale(self.ralph, 1, 1, 1.2)
@@ -437,7 +432,7 @@ class Game(ShowBase):
             self.spawn_box(lane)
 
     def spawn_bird(self, lane):
-        bird = self.loader.loadModel("models/birds/12214_Bird_v1max_l3.obj")
+        bird = self.loader.loadModel("assets/models/birds/12214_Bird_v1max_l3.obj")
         bird.reparentTo(render)
         bird.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH)
         bird.setScale(BIRD_BASE_SCALE, BIRD_BASE_SCALE, BIRD_BASE_SCALE)
@@ -451,7 +446,7 @@ class Game(ShowBase):
         self.session["birds"].append(bird)
 
     def spawn_box(self, lane):
-        box = self.loader.loadModel("models/crate")
+        box = self.loader.loadModel("assets/models/crate")
         box.reparentTo(render)
         box.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.7, OBSTACLE_SPWN_DEPTH)
         box.setScale(.3)
@@ -476,8 +471,8 @@ class Game(ShowBase):
             return True
         return False
 
-    # def handle_collision(self, entry):
-    #     self.player_hit()
+    def handle_collision(self, entry):
+        self.player_hit()
     
     def tuck(self):
         self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
@@ -492,7 +487,7 @@ class Game(ShowBase):
             print(self.session["hit"])
         self.hit_text.text = 'Hits: ' + str(self.session["hit"])
         if self.session["hearts_counter"] > 1:
-            self.session["hearts_obj"][self.session["hearts_counter"] - 1].setImage('broken_heart.png')
+            self.session["hearts_obj"][self.session["hearts_counter"] - 1].setImage('assets/images/broken_heart.png')
             self.session["hearts_obj"][self.session["hearts_counter"] - 1].setTransparency(1)
         else:
             self.show_menu()

@@ -12,7 +12,7 @@ JUMP_V0_FORCE = 0.9
 GRAVITY_FORCE = -0.002
 MOTION_MULTIPLIER = 0.75
 TIME_MULTIPLIER = 1300
-PLAYER_HW_RATION = 2  # Height is 2 * Width
+PLAYER_HW_RATIO = 2  # Height is 2 * Width
 
 
 # Renamed from Player_PositionY_Modes
@@ -97,7 +97,7 @@ class Player:
 
         # The player size in pixels
         self.player_width = self.screen_block_width
-        self.player_height = PLAYER_HW_RATION * self.screen_block_height
+        self.player_height = PLAYER_HW_RATIO * self.screen_block_height
 
         # Start the player in (0, 0)
         self.pos_world_y = 0
@@ -193,7 +193,7 @@ class Player:
 
         self.pos_y = PlayerPositionYModes.JUMPED
         self.transition_move_counter = 0
-        self.target_location_y = PLAYER_HW_RATION * self.screen_block_height
+        self.target_location_y = PLAYER_HW_RATIO * self.screen_block_height
         logging.debug('INFO: player.py/start_jump(): Started jump!')
 
     def tuck(self):
