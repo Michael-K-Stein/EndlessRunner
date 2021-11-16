@@ -116,6 +116,12 @@ class DinoRender(ShowBase):
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
+        self.hearts_counter = 3
+        self.hearts_obj = [
+            OnscreenImage(image='heart2.png', pos=(0.9, 1, 0.9), scale=0.08),
+            OnscreenImage(image='heart2.png', pos=(1.05, 1, 0.9), scale=0.08),
+            OnscreenImage(image='heart2.png', pos=(1.2, 1, 0.9), scale=0.08)
+        ]
 
         self.hit_text = OnscreenText(text="Hits: 0", style=1,
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
@@ -201,8 +207,8 @@ class DinoRender(ShowBase):
 
     def click_restart(self):
         self.gameMenu.hide()
-        self.player = Player(self.set_ralph_pos)
-        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        self.player = Player(self.DEBUG, self.set_ralph_pos)
+        self.player.calibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
         self.birds_x_speed = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
         for node in self.birds + self.boxes:
             node.remove_node()
@@ -359,13 +365,14 @@ class DinoRender(ShowBase):
         return Task.cont
 
     def jump(self):
-        self.player.jump()
+        self.player.start_jump()
     
     def tuck(self):
         self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE*0.5)
     
     def tucknt(self):
-        self.ralph.setScale(RALPH_BASE_SCALE,RALPH_BASE_SCALE,RALPH_BASE_SCALE)
+        self.ralph.setScale(RALPH_BASE_SCALE,0.10,RALPH_BASE_SCALE)
+        self.ralph.setScale(self.ralph, 1, 1, 1.2)
 
     def set_ralph_pos(self, x, y):
         self.ralph.setPos(self.ralph_base_x + ((y/MAGIC_RALPH_LOCATION_SCALE_FACTOR)*self.ralph_rot_multiplier), (y/MAGIC_RALPH_LOCATION_SCALE_FACTOR) + self.ralph_base_y, 5.5)
@@ -509,6 +516,11 @@ class DinoRender(ShowBase):
         if self.DEBUG:
             print(self.hit)
         self.hit_text.text = 'Hits: ' + str(self.hit)
+        if self.hearts_counter > 0:
+            self.hearts_obj[self.hearts_counter - 1].setImage('broken_heart.png')
+        else:
+            print('exit!!!')
+        self.hearts_counter -= 1
     
 demo = DinoRender()
 demo.run()
