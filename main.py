@@ -8,7 +8,6 @@ import scan
 class Game(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-
         self.DEBUG = False
         if "debug" in sys.argv:
             self.DEBUG = True
@@ -18,6 +17,9 @@ class Game(ShowBase):
 
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
+        
+        self.tunnel_color = 0
+        self.tunnel_counter = 0
 
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
@@ -200,9 +202,9 @@ class Game(ShowBase):
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
 
-        if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
-            self.session["last_tunnel_remodel_time"] = self.session["time"]
-            remodel_tunnels(self)
+        # if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
+        #     self.session["last_tunnel_remodel_time"] = self.session["time"]
+        #     remodel_tunnels(self)
 
         return Task.cont
 
