@@ -110,6 +110,10 @@ class DinoRender(ShowBase):
         self.birds = []
         self.boxes = []
 
+        self.score = 0
+        self.time = 0
+        self.score_last_update_time = 0
+
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
         self.title = OnscreenText(text="Ha'ag", style=1,
@@ -209,6 +213,9 @@ class DinoRender(ShowBase):
         
         self.birds = []
         self.boxes = []
+
+        self.score = 0
+        self.time = 0
 
         self.resume_game()
         self.background_music.play()
@@ -347,6 +354,12 @@ class DinoRender(ShowBase):
             #  -1.5, -0.05, 0 | left
             bird.setPos(bird, self.birds_x_speed, 0, -0.0)#-0.1
         
+        self.time += globalClock.getDt()
+        if self.time > self.score_last_update_time + 0.2:
+            self.score_last_update_time = self.time
+            self.score += -self.birds_x_speed * 0.2
+        self.hit_text.text = 'Score: ' + str(int(self.score))
+
         return Task.cont
 
     def game_speed_acceleration(self, task):
@@ -508,7 +521,7 @@ class DinoRender(ShowBase):
         self.hit += 1
         if self.DEBUG:
             print(self.hit)
-        self.hit_text.text = 'Hits: ' + str(self.hit)
+        #self.hit_text.text = 'Hits: ' + str(self.hit)
     
 demo = DinoRender()
 demo.run()
