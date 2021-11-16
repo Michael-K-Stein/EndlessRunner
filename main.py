@@ -21,7 +21,7 @@ from panda3d.core import OrthographicLens
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerPusher
-from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox
+from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox, CollisionSphere
 from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
@@ -69,6 +69,8 @@ BIRD_BASE_SCALE = 0.015
 MAGIC_RALPH_LOCATION_SCALE_FACTOR = 270
 MAGIC_POINT_THIRTY_FIVE = 0.35
 
+PRIZE_BASE_SCALE = 0.1
+
 bird_spawner_timer = ClockObject()
 game_speed_timer = ClockObject()
 
@@ -90,6 +92,9 @@ class DinoRender(ShowBase):
         #print(entry)
         #print('== End collision message ===')
         self.player_hit()
+    def handle_prize_collision(self, entry):
+        self.remove_obj(entry.getFromNodePath())
+        self.score += 777
 
 
     def __init__(self):
@@ -110,6 +115,7 @@ class DinoRender(ShowBase):
 
         self.birds = []
         self.boxes = []
+        self.prizes = []
 
         self.score = 0
         self.time = 0
@@ -158,6 +164,7 @@ class DinoRender(ShowBase):
         self.init_tunnel()
         self.init_ralph()
         self.cont_tunnel()
+        
 
         self.accept("arrow_left", self.rotate, ["LEFT"])
         self.accept("arrow_right", self.rotate, ["RIGHT"])
@@ -218,12 +225,14 @@ class DinoRender(ShowBase):
         self.taskMgr.add(self.spawner_timer, "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
+        self.taskMgr.add(self.spawn_prizes, "SpawnPrizes")
 
     def pause_game(self):
         self.tasks_running = False
         self.taskMgr.remove("Spawner")
         self.taskMgr.remove("GameLoop")
         self.taskMgr.remove("GameSpeedAcceleration")
+        self.taskMgr.remove("SpawnPrizes")
         self.background_music.stop()
 
     def click_restart(self):
@@ -236,6 +245,7 @@ class DinoRender(ShowBase):
 
         self.birds = []
         self.boxes = []
+        self.prizes = []
 
         self.hearts_counter = 3
         self.hearts_obj = [
@@ -280,6 +290,8 @@ class DinoRender(ShowBase):
         self.accept('ralph-into-box', self.handle_collision)
         self.accept('ralph-into-bird', self.handle_collision)
         self.accept('bird-into-ralph', self.handle_collision)
+        self.accept('prize-into-ralph', self.handle_prize_collision)
+        self.accept('ralph-into-prize', self.handle_prize_collision)
 
     def overlay(self):
         dr = self.win.makeDisplayRegion()
@@ -398,8 +410,12 @@ class DinoRender(ShowBase):
             box.setPos(box, self.birds_x_speed / (7*5), 0, 0)
 
         for bird in self.birds:
-            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getZ()) / 10)#-0.1
+            # Move bird and sine wave
+            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getZ()) / 10)
         
+        for prize in self.prizes:
+            prize.setPos(prize, 0, 0, -self.birds_x_speed / 10)
+
         self.time += globalClock.getDt()
         if self.time > self.score_last_update_time + 0.2:
             self.score_last_update_time = self.time
@@ -413,7 +429,6 @@ class DinoRender(ShowBase):
             self.birds_x_speed += BIRDS_X_ACCELERATION
             self.playback_speed += 0.002
             self.background_music.setPlayRate(self.playback_speed)
-            # self.birds_y_speed += BIRDS_X_ACCELERATION
             game_speed_timer.reset()
         return Task.cont
 
@@ -444,6 +459,24 @@ class DinoRender(ShowBase):
             else:
                 self.tunnel[x].reparentTo(self.tunnel[x - 1])
             self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+
+    def spawn_prizes(self, task):
+
+        if random.randint(0,100) == 7:
+            ball = self.loader.loadModel("models/objects/soccerBall.egg")
+            ball.reparentTo(render)
+            ball.setPos(0, -0.40, OBSTACLE_SPWN_DEPTH)
+            ball.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
+
+            col = ball.attachNewNode(CollisionNode('prize'))
+            col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.5))
+            if self.DEBUG:
+                col.show()
+            self.cTrav.addCollider(col, self.notifier)
+
+            self.prizes.append(ball)
+
+        return Task.cont
 
     # initialize the runner
     def init_ralph(self):
@@ -549,8 +582,10 @@ class DinoRender(ShowBase):
         obj.remove_node()
         if obj in self.birds:
             self.birds.remove(obj)
-        else:
+        elif obj in self.boxes:
             self.boxes.remove(obj)
+        elif obj in self.prizes:
+            self.prizes.remove(obj)
 
     def is_out(self, obj):
         if obj.get_pos()[1] <= -0.7:
