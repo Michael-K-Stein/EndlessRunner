@@ -80,7 +80,7 @@ class TYPE(Enum):
 
 class DinoRender(ShowBase):
     # Macro-like function used to reduce the amount to code needed to create the on screen instructions
-    def genLabelText(self, i, text):
+    def generate_label_text(self, i, text):
         return OnscreenText(text=text, parent=base.a2dTopLeft, scale=.05,
                             pos=(0.06, -.065 * i), fg=(1, 1, 1, 1),
                             align=TextNode.ALeft)
@@ -155,9 +155,9 @@ class DinoRender(ShowBase):
         render.setFog(self.fog)
 
         # Load the tunel and start the tunnel
-        self.initTunnel()
-        self.initRalph()
-        self.contTunnel()
+        self.init_tunnel()
+        self.init_ralph()
+        self.cont_tunnel()
 
         self.accept("arrow_left", self.rotate, ["left"])
         self.accept("arrow_right", self.rotate, ["right"])
@@ -311,9 +311,9 @@ class DinoRender(ShowBase):
         self.card.setDepthTest(False)
         self.card.setDepthWrite(False)
 
-        return self.taskMgr.add(self.updateTex, 'video frame update')
+        return self.taskMgr.add(self.update_tex, 'video frame update')
 
-    def updateTex(self, task):
+    def update_tex(self, task):
         # positive y goes down in openCV, so we must flip the y coordinates
         flipped_frame = cv2.flip(self.scanner.frame, 0)
         # overwriting the memory with new frame
@@ -377,7 +377,7 @@ class DinoRender(ShowBase):
         for bird in self.birds:
             #  -1.5, -0.05, 0 | right
             #  -1.5, -0.05, 0 | left
-            bird.setPos(bird, self.birds_x_speed, 0, -0.0)#-0.1
+            bird.setPos(bird, self.birds_x_speed, 0, math.sin(bird.getPosX()) / 10)#-0.1
         
         self.time += globalClock.getDt()
         if self.time > self.score_last_update_time + 0.2:
@@ -410,7 +410,7 @@ class DinoRender(ShowBase):
         self.ralph.setPos(self.ralph_base_x + ((y/MAGIC_RALPH_LOCATION_SCALE_FACTOR)*self.ralph_rot_multiplier), (y/MAGIC_RALPH_LOCATION_SCALE_FACTOR) + self.ralph_base_y, 5.5)
 
     # Code to initialize the tunnel
-    def initTunnel(self):
+    def init_tunnel(self):
         self.tunnel = [None] * 4
 
         for x in range(4):
@@ -425,7 +425,7 @@ class DinoRender(ShowBase):
             self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
 
     # initialize the runner
-    def initRalph(self):
+    def init_ralph(self):
         self.ralph = Actor("models/ralph", {"run": "models/ralph-run", "walk": "models/ralph-walk"})
         self.ralph.reparentTo(render)
         self.ralph.setScale(.15, 0.10, 0.15)
@@ -446,7 +446,7 @@ class DinoRender(ShowBase):
         self.cTrav.addCollider(self.ralph.collider, self.notifier)
 
     # This function is called to snap the front of the tunnel to the back to simulate traveling through it
-    def contTunnel(self):
+    def cont_tunnel(self):
         # This line uses slices to take the front of the list and put it on the back
         self.tunnel = self.tunnel[1:] + self.tunnel[0:1]
         # Set the front segment (which was at TUNNEL_SEGMENT_LENGTH) to 0, which is where the previous segment started
@@ -467,7 +467,7 @@ class DinoRender(ShowBase):
                      duration=TUNNEL_TIME,
                      fromData=0,
                      toData=TUNNEL_SEGMENT_LENGTH * .305), # speed
-            Func(self.contTunnel)
+            Func(self.cont_tunnel)
         )
         self.tunnelMove.start()
 
@@ -556,5 +556,5 @@ class DinoRender(ShowBase):
         self.hearts_counter -= 1
         #self.hit_text.text = 'Hits: ' + str(self.hit)
     
-demo = DinoRender()
-demo.run()
+game = DinoRender()
+game.run()
