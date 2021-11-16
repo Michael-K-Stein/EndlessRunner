@@ -10,6 +10,7 @@ from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
 import scan
+import sys
 
 from player import Player
 
@@ -63,6 +64,8 @@ class DinoRender(ShowBase):
             fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight,
             align=TextNode.ARight, pos=(-0.1, 0.1), scale=.08)
 
+        self.escapeEventText = self.genLabelText(1, "ESC: Quit")
+
         # disable mouse control so that we can place the camera
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
@@ -107,7 +110,13 @@ class DinoRender(ShowBase):
         # Init scanner
         self.scanner = scan.Scanner(self.scanner_callback)
         self.scanner.run_scanner()
+        self.accept('escape', self.exit_game)
         self.accept("c", self.scanner.calibrate)
+
+    def exit_game(self):
+        self.scanner.release()
+        sys.exit(0)
+        
 
     def scanner_callback(self, action):
         if action == "JUMP":
