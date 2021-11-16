@@ -17,7 +17,7 @@ from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 from panda3d.core import ClockObject
 from panda3d.core import CollisionTraverser
-from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox
+from panda3d.core import CollisionPolygon, CollisionNode, CollisionHandlerEvent, Point3, CollisionBox, CollisionSphere
 from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
@@ -59,6 +59,9 @@ FOG_EXPIRY_DENSITY = 0.045
 
 BIRD_DEFAULT_SPEED = 1.5
 BIRD_BASE_SCALE = 0.015
+
+PRIZE_REWARD = 777
+PRIZE_BASE_SCALE = 0.3
 
 # Pure magic
 MAGIC_RALPH_LOCATION_SCALE_FACTOR = 270
