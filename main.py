@@ -2,6 +2,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import Fog
 from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
+from direct.gui.DirectGui import *
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.MetaInterval import Sequence
 from direct.interval.LerpInterval import LerpFunc
@@ -10,6 +11,7 @@ from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import ClockObject
 import scan
+import sys
 
 from player import Player
 
@@ -53,9 +55,10 @@ class DinoRender(ShowBase):
         # create a window and set up everything we need for rendering into it.
         ShowBase.__init__(self)
 
-        background_music = base.loader.loadSfx('./music.wav')
-        background_music.setLoop(True)
-        background_music.play()
+        self.tasks_running = False
+
+        self.background_music = base.loader.loadSfx('./music.wav')
+        self.background_music.setLoop(True)
 
         # Standard initialization stuff
         # Standard title that's on screen in every tutorial
@@ -67,13 +70,6 @@ class DinoRender(ShowBase):
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(0, 0, 0)  # set the background color to black
-
-        self.birds_x_speed = -1.5
-
-        self.birds = []
-        self.taskMgr.add(self.bird_spawner, "BirdSpawner")
-        self.taskMgr.add(self.game_loop, "GameLoop")
-        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
 
         # World specific-code
         self.fog = Fog('distanceFog')
@@ -96,21 +92,74 @@ class DinoRender(ShowBase):
         self.accept("space", self.jump)
         self.accept("lshift", self.tuck)
         self.accept("rshift", self.tucknt)
-
-        self.player = Player(self.set_ralph_pos)
-        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        self.accept("r", self.quit_game)
+        self.accept("p", lambda: self.scanner_callback("JUMP"))
+        self.accept("l", self.show_menu)
 
         self.ralph_base_y = self.ralph.getY()
         self.ralph_base_x = self.ralph.getX()
         self.ralph_rot_multiplier = 0
 
         # Init scanner
-        self.scanner = scan.Scanner(self.scanner_callback)
-        self.scanner.run_scanner()
-        self.accept("c", self.scanner.calibrate)
+        if "debug" not in sys.argv:
+            self.scanner = scan.Scanner(self.scanner_callback)
+            self.scanner.run_scanner()
+            self.accept("c", self.scanner.calibrate)
+
+        self.show_menu()
+
+    def show_menu(self):
+        self.pause_game()
+        self.gameMenu = DirectDialog(frameSize = (-10, 10, -10, 10), fadeScreen = 0.4, relief = DGG.FLAT)
+        DirectLabel(text="Ha'ag", parent=self.gameMenu, scale=0.1, pos = (0,0,0.2))
+        DirectButton(text = "Restart",
+                   command = self.click_restart,
+                   pos = (0, 0, -0.2),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+        DirectButton(text = "Calibrate",
+                   command = self.scanner.calibrate,
+                   pos = (0, 0, -0.4),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+        DirectButton(text = "Quit",
+                   command = self.quit_game,
+                   pos = (0, 0, -0.6),
+                   parent = self.gameMenu,
+                   scale = 0.07)
+
+    def resume_game(self):
+        self.tasks_running = True
+        self.taskMgr.add(self.bird_spawner, "BirdSpawner")
+        self.taskMgr.add(self.game_loop, "GameLoop")
+        self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
+
+    def pause_game(self):
+        self.tasks_running = False
+        self.taskMgr.remove("BirdSpawner")
+        self.taskMgr.remove("GameLoop")
+        self.taskMgr.remove("GameSpeedAcceleration")
+        self.background_music.stop()
+
+    def click_restart(self):
+        self.gameMenu.hide()
+        self.player = Player(self.set_ralph_pos)
+        self.player.callibrate(TUNNEL_SEGMENT_LENGTH, TUNNEL_SEGMENT_LENGTH, 3, 3)
+        self.birds_x_speed = -1.5
+        for bird in self.birds if hasattr(self, "birds") else []:
+            bird.remove_node()
+        self.birds = []
+        self.resume_game()
+        self.background_music.play()
+
+    def quit_game(self):
+        self.scanner.stop()
+        sys.exit()
 
     def scanner_callback(self, action):
         if action == "JUMP":
+            if not self.tasks_running:
+                self.click_restart()
             self.jump()
         elif action == "TOOK":
             self.tuck()
@@ -134,7 +183,7 @@ class DinoRender(ShowBase):
         #     if self.ralph.lane > 1:
         #         self.ralph.lane = 1
 
-        self.ralph.lane = lane        
+        self.ralph.lane = lane
 
         print(f"Rotate {lane}")
         print(f"Lane: {self.ralph.lane}")
@@ -170,7 +219,7 @@ class DinoRender(ShowBase):
                 self.birds.remove(bird)
                 bird.remove_node()
         return Task.cont
-    
+
 
     def game_speed_acceleration(self, task):
         if (int(game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:

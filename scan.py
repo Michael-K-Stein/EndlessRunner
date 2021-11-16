@@ -54,7 +54,7 @@ class Scanner:
             action = "LEFT"
         else:
             action = "CENTER"
-        
+
         if action is not None:
             if self.last_action != action:
                 self.last_action = action
@@ -68,13 +68,17 @@ class Scanner:
         img_res = cv2.bitwise_and(img, img, mask = mask_gray)
 
         cv2.imshow("res", img_res)
-        
+
     def run_scanner(self):
-        thread = threading.Thread(target=self.scan)
-        thread.start()
-    
+        self.thread = threading.Thread(target=self.scan)
+        self.thread.start()
+
+    def stop(self):
+        self.is_alive = False
+
     def scan(self):
-        while True:
+        self.is_alive = True
+        while self.is_alive:
             # Capture frame-by-frame
             ret, frame = self._cap.read()
             frame=cv2.flip(frame, 1)
@@ -90,13 +94,13 @@ class Scanner:
             if boxes:
                 largest_box = boxes[0]
                 x, y, w, h = largest_box
-                
+
                 cropped_person = frame[y:y+h,x:x+w]
                 cropped_person = cv2.resize(cropped_person,(320,520))
 
                 #cv2.imshow("person",cropped_person)
                 self.largest_box = largest_box
-                
+
                 #finding shoes:
                 #self.find_shoes(cropped_person)
 
@@ -114,7 +118,7 @@ class Scanner:
             frame = cv2.resize(frame, (720, 480))
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                self.stop()
             if cv2.waitKey(1) & 0xFF == ord(' '):
                 self.calibrate()
 
@@ -123,7 +127,7 @@ class Scanner:
         # finally, close the window
         cv2.destroyAllWindows()
         cv2.waitKey(1)
-    
+
     @staticmethod
     def get_surface(box):
         x, y, w, h = box
