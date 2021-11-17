@@ -171,14 +171,14 @@ def spawn_box(self, lane):
 def spawn_prize(self, lane):
     prize = None
     extra_scale_factor = 1
-    x = random.randint(0,3)
+    x = random.randint(0,6)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
-    elif x == 3:
+    elif x >= 3:
         spawn_boosters(self)
         return
 
@@ -194,7 +194,7 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    x = 3#random.randint(0,3)
+    x = random.randint(0,3)
     if x == 0:
         booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
         booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
