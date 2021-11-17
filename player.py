@@ -1,6 +1,9 @@
+from basefile import *
+
 """
     Crime commiter: Hanich 18
     Fixer: Hanich 17
+    Fixer#2: Hanich 11
     Purpose: A class for a player with basic physics functionality.
 """
 
@@ -12,7 +15,7 @@ JUMP_V0_FORCE = 0.9
 GRAVITY_FORCE = -0.002
 MOTION_MULTIPLIER = 0.75
 TIME_MULTIPLIER = 1300
-PLAYER_HW_RATION = 2  # Height is 2 * Width
+PLAYER_HW_RATIO = 2  # Height is 2 * Width
 
 
 # Renamed from Player_PositionY_Modes
@@ -97,7 +100,7 @@ class Player:
 
         # The player size in pixels
         self.player_width = self.screen_block_width
-        self.player_height = PLAYER_HW_RATION * self.screen_block_height
+        self.player_height = PLAYER_HW_RATIO * self.screen_block_height
 
         # Start the player in (0, 0)
         self.pos_world_y = 0
@@ -107,7 +110,7 @@ class Player:
         self.target_location_x = self.pos_world_x
         self.target_location_y = self.pos_world_y
 
-    def update(self, delta_time):
+    def update(self, this, delta_time):
         """
         Update the player location
 
@@ -117,7 +120,7 @@ class Player:
         self.do_movement(delta_time)
 
         self.transition_move_counter += (TIME_MULTIPLIER * delta_time)
-        self.post_location()
+        self.post_location(this)
 
     def do_movement(self, delta_time):
         """
@@ -153,7 +156,7 @@ class Player:
         Calculate the y movement
 
         :param delta_time: Time passed from last update
-        :return: 1 or -1, depends on y2 > y1
+        :return: 1 or -1, depends on y2 > y1, times that monstrosity
         """
         return (TIME_MULTIPLIER * delta_time) * MOTION_MULTIPLIER * \
                ((self.target_location_y - self.pos_world_y) /
@@ -164,9 +167,10 @@ class Player:
         Calculate the x movement, NOT REALLY USED
 
         :param delta_time: Time passed from last update
-        :return: 1 or -1, depends on x2 > x1
+        :return: 1 or -1, depends on x2 > x1, times that monstrosity
         """
-        return ((self.target_location_x - self.pos_world_x) /
+        return (TIME_MULTIPLIER * delta_time) * MOTION_MULTIPLIER * \
+               ((self.target_location_x - self.pos_world_x) /
                 abs(self.pos_world_x - self.target_location_x))
 
     def jump_movement(self):
@@ -193,7 +197,7 @@ class Player:
 
         self.pos_y = PlayerPositionYModes.JUMPED
         self.transition_move_counter = 0
-        self.target_location_y = PLAYER_HW_RATION * self.screen_block_height
+        self.target_location_y = PLAYER_HW_RATIO * self.screen_block_height
         logging.debug('INFO: player.py/start_jump(): Started jump!')
 
     def tuck(self):
@@ -256,7 +260,7 @@ class Player:
         self.target_location_x = -self.screen_block_width
         logging.debug('INFO: player.py/set_left(): Set left')
 
-    def post_location(self):
-        self.location_post_callback(self.pos_world_x, self.pos_world_y)
+    def post_location(self, this):
+        self.location_post_callback(this, self.pos_world_x, self.pos_world_y)
         # logging.debug('INFO : \t\tPLAYER : Posting location ' + '(' +
         #               str(self.pos_world_x) + ', ' + str(self.pos_world_y) + ')')
