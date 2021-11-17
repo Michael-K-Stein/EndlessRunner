@@ -166,6 +166,11 @@ class Scanner:
                 points.append((int(x), int(y)) if conf > threshold else None)
 
 
+            if self.is_centered() and self.is_calibrating:
+                color = (255, 255, 255)
+            else:
+                color = (0, 0, 255)
+                
             for pair in POSE_PAIRS:
                 partFrom = pair[0]
                 partTo = pair[1]
@@ -177,16 +182,13 @@ class Scanner:
 
                 if points[idFrom] and points[idTo]:
                     cv2.line(frame, points[idFrom], points[idTo], (0, 255, 0), 3)
-                    cv2.ellipse(frame, points[idFrom], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
-                    cv2.ellipse(frame, points[idTo], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+                    cv2.ellipse(frame, points[idFrom], (3, 3), 0, 0, 360, color, cv2.FILLED)
+                    cv2.ellipse(frame, points[idTo], (3, 3), 0, 0, 360, color, cv2.FILLED)
             self.cur_points = points
             self.find_center_of_person()
         
             t, _ = net.getPerfProfile()
-            if self.is_centered():
-                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            else:
-                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+            cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, color, cv2.FILLED)
             
             frame_y,frame_x , _ = frame.shape
             
