@@ -59,12 +59,6 @@ def cont_tunnel(self):
 def add_tunnel_props(self, tunnel):
     pipe = self.loader.loadModel("assets\\models\\tunnel_varients\\RustPipe.obj")
     pipe.reparentTo(tunnel)
-    """plight = PointLight('plight')
-    plight.setColor((1, 1, 1, 1))
-    plnp = pipe.attachNewNode(plight)
-    plnp.setPos(0, 0, 0)
-    pipe.setLight(plnp)
-    """
     alight = AmbientLight('alight')
     alight.setColor((1, 1, 1, 1))
     alnp = pipe.attachNewNode(alight)
@@ -78,7 +72,7 @@ def spawner_timer(self, task):
             else:
                 spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
-    if random.randint(0,1000) == 7:
+    if random.randint(0,PRIZE_CHANCE) == 7:
         spawn_prize(self, random.randint(0, 2))
     return Task.cont
 
@@ -128,10 +122,10 @@ def spawn_prize(self, lane):
         
     prize.reparentTo(render)
     #prize.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -1.3, OBSTACLE_SPWN_DEPTH)
-    prize.setPos(0, -1.3, OBSTACLE_SPWN_DEPTH)
+    prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
     prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
     col = prize.attachNewNode(CollisionNode('prize'))
-    col.node().addSolid(CollisionSphere(Point3(0,2,0), 0.7))
+    col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.7))
     if self.DEBUG:
         col.show()
     self.cTrav.addCollider(col, self.notifier)

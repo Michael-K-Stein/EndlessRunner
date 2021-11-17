@@ -47,6 +47,12 @@ def player_hit(self):
         remove_obj(self, node)
     #self.hit_text.text = 'Hits: ' + str(self.hit)
 
+def prize_collision(self, prize):
+    if prize.getZ() >= self.ralph.getZ(): 
+        if self.ralph.getX() == 0:
+            if self.ralph.getY() < 0:
+                remove_obj(self, prize)
+
 def is_out_of_frame(self, obj):
     if obj not in self.session["prizes"]:
         if obj.get_pos()[1] <= -0.7:

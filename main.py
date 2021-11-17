@@ -17,6 +17,7 @@ class Game(ShowBase):
 
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
+        self.highscore_text = OnscreenText(text="Highscore: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.18), scale=.08)
         
         self.tunnel_color = 0
         self.tunnel_counter = 0
@@ -66,9 +67,9 @@ class Game(ShowBase):
             "birds_x_speed": 0,
             "playback_speed": 1,
             "hearts_obj": [
-                OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                  OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight)][::-1]
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)]
         }
 
     def register_keys(self):
@@ -77,7 +78,8 @@ class Game(ShowBase):
         self.accept("space", self.player.start_jump)
         self.accept("lshift", tuck, [self])
         self.accept("rshift", tucknt, [self])
-        self.accept("r", self.quit_game)
+        for exit_key in ['r', 'esc']:
+            self.accept(exit_key, self.quit_game)
         self.accept("p", self.scanner_callback, ["JUMP"])
         self.accept("l", self.show_menu)
 
@@ -91,27 +93,9 @@ class Game(ShowBase):
         # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
+                  OnscreenText(text="(White Circle => Good | Red Circle => Bad)", parent=self.gameMenu, scale=0.04, pos = (0,-0.39)),
                   OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
-
-        if not self.DEBUG:
-            DirectButton(text = "Calibrate",
-                    command = self.scanner.calibrate,
-                    pos = (0, 0, -0.4),
-                    parent = self.gameMenu,
-                    scale = 0.07)
-        else:
-            DirectButton(text = "DEBUG MODE",
-                    command = None,
-                    pos = (0, 0, -0.4),
-                    parent = self.gameMenu,
-                    scale = 0.07)
-        
-        DirectButton(text = "Quit",
-                   command = self.quit_game,
-                   pos = (0, 0, -0.6),
-                   parent = self.gameMenu,
-                   scale = 0.07)
 
     def start_tasks(self):
         self.tasks_running = True
@@ -177,10 +161,15 @@ class Game(ShowBase):
             rotate(self, 1)
             tucknt(self)
         elif action == "CALIBRATED":
-            self.labels[0].setText("Jump to start...")
-            self.labels[0].setPos(0,-0.2)
-            self.labels[0].setScale(0.1)
-            self.labels[1].setText("")
+            if "labels" in dir(self):
+                self.labels[0].setText("Jump to start...")
+                self.labels[0].setPos(0,-0.2)
+                self.labels[0].setScale(0.1)
+                self.labels[1].setText("")
+        elif action == "CAMERA":
+            if "labels" in dir(self):
+                self.labels[0].setText("Camera can't fully see you")
+
 
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
@@ -198,7 +187,7 @@ class Game(ShowBase):
         
         for prize in self.session["prizes"]:
             prize.setPos(prize, 0, 0, -self.session["birds_x_speed"] / 10)
-            if is_out_of_frame(self, prize):
+            if is_out_of_frame(self, prize) or prize_collision(self, prize):
                 remove_obj(self, prize)
 
         self.session["time"] += globalClock.getDt()
@@ -206,6 +195,7 @@ class Game(ShowBase):
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["birds_x_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
+        self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 

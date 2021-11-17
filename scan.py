@@ -1,10 +1,10 @@
 from basefile import *
 
 DEFAULT_HEIGHT = 175
-DEFAULT_JUMP_THRESH = 10
+DEFAULT_JUMP_THRESH = 15
 DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
-DEFAULT_CALIB_LEFTRIGHT = 50
+DEFAULT_CALIB_LEFTRIGHT = 65
 DEFAULT_CALIB_HEIGHT = 300
 
 BODY_PARTS = { "Nose": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
@@ -32,7 +32,7 @@ class Scanner:
         self.cur_points = None
         self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
         self.is_calibrating = True
-        self.time_elapsed_calibration = time.localtime().tm_sec - 3
+        self.time_elapsed_calibration = time.localtime().tm_sec + 3
         self.person_x = 0
         self.person_y = 0
         self.person_height = 0
@@ -56,8 +56,14 @@ class Scanner:
         self.release()
     
     def find_height_of_person(self):
-        self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
-
+        try:
+            self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
+        except TypeError:
+            self.callback("CAMERA")
+            self.time_elapsed_calibration = time.localtime().tm_sec
+            return False
+        return True
+    
     def find_center_of_person(self):
         sum_x, sum_y, count = 0, 0, 0
         cur_point = 0
@@ -81,7 +87,8 @@ class Scanner:
 
 
     def calibrate(self):
-        self.find_height_of_person()
+        if not self.find_height_of_person():
+            return False
         #adjusting thresholds
         self.scale = self.person_height / DEFAULT_HEIGHT
         self.jump_thresh = DEFAULT_JUMP_THRESH * self.scale
@@ -94,11 +101,12 @@ class Scanner:
         action = "CALIBRATED"
         self.callback(action)
 
+        return True
+
     def test_for_action(self):
         action = None
         if self.is_calibrating:
             return
-        #print(f'{self.person_y} < {self.frame_center_y} - {self.crouch_thresh}')
         if self.frame_center_y - self.person_y > self.jump_thresh:
             action = "JUMP"
         elif self.person_y - self.frame_center_y  >  self.crouch_thresh:
@@ -111,15 +119,14 @@ class Scanner:
             action = "CENTER"
 
         if action is not None:
-            #print(action)
             if self.last_action != action:
                 self.last_action = action
                 self.callback(action)
 
     def is_centered(self):
         frame_x, frame_y, _ = self.frame.shape
-        frame_x //= 4
-        frame_y //= 4
+        frame_x //= 2
+        frame_y //= 2
         return abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
             abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
 
@@ -174,11 +181,10 @@ class Scanner:
             self.find_center_of_person()
         
             t, _ = net.getPerfProfile()
-            #print(points[BODY_PARTS["Nose"]])
-            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-
-
-            cv2.ellipse(frame, (self.person_x, self.person_y), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            if self.is_centered():
+                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            else:
+                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (0, 0, 255), cv2.FILLED)
             
             #cv2.ellipse(frame, (int(self.frame_center_x + self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
             #cv2.ellipse(frame, (int(self.frame_center_x - self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
@@ -202,12 +208,10 @@ class Scanner:
             self.frame = frame
 
             if self.is_calibrating:
-                print("time: ", time.localtime().tm_sec - self.time_elapsed_calibration)
                 frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
                 if self.is_centered():
-                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 10:  
-                        self.is_calibrating = False
-                        self.calibrate()
+                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:  
+                        self.is_calibrating = not self.calibrate()
                 else:
                     self.time_elapsed_calibration = time.localtime().tm_sec
             self.test_for_action()
