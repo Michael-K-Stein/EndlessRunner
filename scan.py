@@ -103,42 +103,30 @@ class Scanner:
 
         return True
 
+    def get_person_lane(self):
+        if self.person_x > self.frame_center_x + self.left_right_thresh:
+            return "RIGHT"
+        elif self.person_x < self.frame_center_x - self.left_right_thresh:
+            return "LEFT"
+        else:
+            return "CENTER"
+    
     def test_for_action(self):
         action = None
         if self.is_calibrating:
             return
-        if self.person_y - self.frame_center_y  >  self.crouch_thresh and \
-            self.person_x > self.frame_center_x + self.left_right_thresh:
-            action = "RIGHT_TOOK"
-        elif self.person_y - self.frame_center_y  >  self.crouch_thresh and \
-            self.person_x < self.frame_center_x - self.left_right_thresh:
-            action = "LEFT_TOOK"
-        elif self.person_y - self.frame_center_y  >  self.crouch_thresh and \
-            not self.person_x < self.frame_center_x - self.left_right_thresh and \
-            not self.person_x > self.frame_center_x + self.left_right_thresh:
-            action = "LEFT_TOOK"
-        elif self.frame_center_y - self.person_y > self.jump_thresh:
+        if self.frame_center_y - self.person_y > self.jump_thresh:
             action = "JUMP"
-        elif self.person_y - self.frame_center_y  >  self.crouch_thresh:
-            action = "TOOK"
-        elif self.person_x > self.frame_center_x + self.left_right_thresh:
-            action = "RIGHT"
-        elif self.person_x < self.frame_center_x - self.left_right_thresh:
-            action = "LEFT"
+        elif self.person_y - self.frame_center_y > self.crouch_thresh:
+            action = self.get_person_lane() + "_TOOK"
         else:
-            action = "CENTER"
+            action = self.get_person_lane()
 
         if action is not None:
             if self.last_action != action:
                 self.last_action = action
-                if action == "LEFT_TOOK":
-                    self.callback("LEFT")
-                    self.callback("TOOK")
-                elif action == "RIGHT_TOOK":
-                    self.callback("RIGHT")
-                    self.callback("TOOK")
-                else:
-                    self.callback(action)
+                for callback_action in action.split("_"):
+                    self.callback(callback_action)
                 print(action)
 
     def is_centered(self):
@@ -167,7 +155,7 @@ class Scanner:
                 out = net.forward()
                 out = out[:, :19, :, :] 
             except cv2.error:
-                pass
+                continue
 
             assert(len(BODY_PARTS) == out.shape[1])
 
@@ -233,7 +221,7 @@ class Scanner:
             if self.is_calibrating:
                 frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
                 if self.is_centered():
-                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:  
+                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:
                         self.is_calibrating = not self.calibrate()
                 else:
                     self.time_elapsed_calibration = time.localtime().tm_sec
