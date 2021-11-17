@@ -1,18 +1,3 @@
-# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
-# File Created: 03.09.2013 20:07:53
-
-newmtl cone1
-	Ns 34.0000
-	Ni 1.5000
-	d 1.0000
-	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000 
-	illum 2
-	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.1980 0.1980 0.1980
-	Ke 0.0000 0.0000 0.0000
-	map_Ka .\cone1.jpg
-	map_Kd .\cone1.jpg
-	map_bump .\cone1.jpg
-	bump .\cone1.jpg
+version https://git-lfs.github.com/spec/v1
+oid sha256:ed1afde6ebfd8407549dcbfd4491e5b366a4f6abf08790f24eec31477b40b59e
+size 368
