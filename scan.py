@@ -4,7 +4,7 @@ DEFAULT_HEIGHT = 175
 DEFAULT_JUMP_THRESH = 15
 DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
-DEFAULT_CALIB_LEFTRIGHT = 65
+DEFAULT_CALIB_LEFTRIGHT = 40
 DEFAULT_CALIB_HEIGHT = 300
 
 BODY_PARTS = { "Nose": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
@@ -125,9 +125,9 @@ class Scanner:
                 print(action)
 
     def is_centered(self):
-        frame_x, frame_y, _ = self.frame.shape
-        frame_x //= 2
-        frame_y //= 2
+        frame_y, frame_x , _ = self.frame.shape
+        frame_x //= 4
+        frame_y //= 4
         res = abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
             abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
         return res
@@ -188,23 +188,22 @@ class Scanner:
             else:
                 cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (0, 0, 255), cv2.FILLED)
             
-            #cv2.ellipse(frame, (int(self.frame_center_x + self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            #cv2.ellipse(frame, (int(self.frame_center_x - self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            #cv2.ellipse(frame, (10, int(self.frame_center_y + self.jump_thresh)), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            frame_y,frame_x , _ = frame.shape
+            
 
             #right thresh
-            cv2.line(frame, (int(self.frame_center_x + self.left_right_thresh),50),\
-             (int(self.frame_center_x + self.left_right_thresh),250), (255,255,255), 3)
+            cv2.line(frame, (int(self.frame_center_x + self.left_right_thresh),0),\
+             (int(self.frame_center_x + self.left_right_thresh),300), (255,255,255), 3)
             #left thresh
-            cv2.line(frame, (int(self.frame_center_x - self.left_right_thresh),50),\
-             (int(self.frame_center_x - self.left_right_thresh),250), (255,255,255), 3)
+            cv2.line(frame, (int(self.frame_center_x - self.left_right_thresh),0),\
+             (int(self.frame_center_x - self.left_right_thresh),300), (255,255,255), 3)
             #jump thresh
-            cv2.line(frame, (50, int(self.frame_center_y - self.jump_thresh)),\
-             (250,int(self.frame_center_y - self.jump_thresh)), (255,255,255), 3)
+            cv2.line(frame, (0, int(self.frame_center_y - self.jump_thresh)),\
+             (400,int(self.frame_center_y - self.jump_thresh)), (255,255,255), 3)
             #crouch thresh
     
-            cv2.line(frame, (50, int(self.frame_center_y + self.crouch_thresh)),\
-             (250,int(self.frame_center_y + self.crouch_thresh)), (255,255,255), 3)
+            cv2.line(frame, (0, int(self.frame_center_y + self.crouch_thresh)),\
+             (400,int(self.frame_center_y + self.crouch_thresh)), (255,255,255), 3)
 
             frame = cv2.resize(frame, (720, 480))
             self.frame = frame
