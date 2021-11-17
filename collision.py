@@ -20,8 +20,8 @@ def init_collision_detection(self):
 
     # magic. Do not touch!
     self.accept('box-into-ralph', handle_collision)
-    self.accept('ralph-into-box', handle_collision)
-    self.accept('ralph-into-bird', handle_collision)
+    #self.accept('ralph-into-box', handle_collision)
+    #self.accept('ralph-into-bird', handle_collision)
     self.accept('bird-into-ralph', handle_collision)
     #self.accept('prize-into-ralph', handle_prize_collision)
     #self.accept('ralph-into-prize', handle_prize_collision)
