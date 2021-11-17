@@ -65,6 +65,26 @@ def add_tunnel_props(self, tunnel):
     alnp = pipe.attachNewNode(alight)
     pipe.setLight(alnp)
 
+    if random.randint(0, 3) == 1:
+        knife = self.loader.loadModel("assets/models/tunnel_varients/Knife/Knife")
+        knife.setScale(0.05)
+        knife.setPos(9,-4,0)
+        knife.setP(45)
+        knife.reparentTo(tunnel)
+
+    if random.randint(0, 4) == 1:
+        switch = self.loader.loadModel("assets/models/tunnel_varients/Switch/Switch")
+        switch.setScale(3)
+        switch.setPos(-9.5,0,0)
+        switch.setHpr(90, 180, 90)
+        switch.reparentTo(tunnel)
+
+    if random.randint(0, 15) == 1:
+        skeleton = self.loader.loadModel("assets/models/tunnel_varients/Skeleton/Skeleton")
+        skeleton.setPos(9,0,3)
+        skeleton.setHpr(70, 0, 90)
+        skeleton.reparentTo(tunnel)
+
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
         for _ in range(random.randint(1, 4)):
@@ -131,7 +151,8 @@ def spawn_prize(self, lane):
         prize.showTightBounds()
         prize.setScale(0.003, 0.003, 0.003)
         prize.setHpr(0, 0, 45)"""
-        
+
+
     prize.reparentTo(render)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
     prize.setScale(prize, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor)

@@ -19,7 +19,7 @@ class Game(ShowBase):
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
         self.highscore_text = OnscreenText(text="Highscore: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.18), scale=.08)
-        
+
         self.tunnel_color = 0
         self.tunnel_counter = 0
 
@@ -30,7 +30,7 @@ class Game(ShowBase):
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
         base.setBackgroundColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
-        
+
         init_tunnel(self)
         self.init_fog()
         init_ralph(self)
@@ -74,7 +74,9 @@ class Game(ShowBase):
             "hearts_obj": [
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)]
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
+            "player_immune": False,
+            "player_immune_start": 0
         }
 
     def register_keys(self):
@@ -124,7 +126,7 @@ class Game(ShowBase):
                 node.remove_node()
         self.create_game_session()
         self.gameMenu.hide()
-        self.session["game_speed"] = (-GAME_DEFAULT_SPEED * 1) if self.DEBUG else -GAME_DEFAULT_SPEED 
+        self.session["game_speed"] = (-GAME_DEFAULT_SPEED * 1) if self.DEBUG else -GAME_DEFAULT_SPEED
 
         for x in self.session["hearts_obj"]:
             x.setTransparency(1)
@@ -138,7 +140,7 @@ class Game(ShowBase):
     def quit_game(self):
         self.scanner.stop()
         sys.exit(0)
-    
+
     def init_soundeffects(self):
         self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
         self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
@@ -147,7 +149,7 @@ class Game(ShowBase):
         self.background_music = base.loader.loadSfx('assets/music/music.wav')
         self.background_music.setLoop(True)
         # self.playback_speed = 1
-    
+
     def init_fog(self):
         self.fog = Fog('distanceFog')
         self.fog.setColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
@@ -194,7 +196,7 @@ class Game(ShowBase):
             if is_out_of_frame(self, bird):
                 remove_obj(self, bird)
             #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
-        
+
         for prize in self.session["prizes"]:
             prize.setPos(prize, 0, 0, -self.session["game_speed"] / PRIZE_BASE_SCALE)
             if is_out_of_frame(self, prize) or prize_collision(self, prize):
@@ -208,6 +210,14 @@ class Game(ShowBase):
         self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
+
+        if self.session["player_immune"]:
+            if self.session["time"] - self.session["player_immune_start"] > 3:
+                self.session["player_immune"] = False
+
+            self.ralph.setAlphaScale(0.35 + math.sin(self.session["time"] * 10)/2)
+        else:
+            self.ralph.setAlphaScale(0.35)
 
         return Task.cont
 

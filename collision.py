@@ -17,7 +17,7 @@ def init_collision_detection(self):
 
     self.notifier.addInPattern('%fn-into-%in')
     self.notifier.addAgainPattern('%fn-again-%in')
-    
+
     def handle_collision(entry):
         player_hit(self)
 
@@ -30,8 +30,11 @@ def init_collision_detection(self):
     #self.accept('ralph-into-prize', handle_prize_collision)
 
 def player_hit(self):
+    if self.session["player_immune"]:
+        return
+
     self.hit_soundeffect.play()
-    
+
     self.session["hit"] += 1
     if self.DEBUG:
         print(self.session["hit"])
@@ -48,12 +51,15 @@ def player_hit(self):
             self.session["object_spawn_interval_seconds"] // 2)
     self.session["playback_speed"] = max(1, self.session["playback_speed"] - 0.1)
 
-    for node in self.session["birds"] + self.session["boxes"]:
-        remove_obj(self, node)
+    # for node in self.session["birds"] + self.session["boxes"]:
+    #     remove_obj(self, node)
     #self.hit_text.text = 'Hits: ' + str(self.hit)
 
+    self.session["player_immune"] = True
+    self.session["player_immune_start"] = self.session["time"]
+
 def prize_collision(self, prize):
-    if prize.getZ() >= self.ralph.getZ(): 
+    if prize.getZ() >= self.ralph.getZ():
         if self.ralph.getX() == 0:
             if self.ralph.getY() < 0:
                 handle_prize_collision(self, None)
