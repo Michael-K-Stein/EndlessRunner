@@ -30,7 +30,7 @@ class Scanner:
         self.last_action = ""
         self.is_running = True
         self.cur_points = None
-        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
+        self.overlay = cv2.resize(cv2.imread('./assets/images/outline_body.png'), (720, 480))
         self.is_calibrating = True
         self.time_elapsed_calibration = time.localtime().tm_sec + 3
         self.person_x = 0
