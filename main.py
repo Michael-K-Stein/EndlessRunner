@@ -323,6 +323,11 @@ class Game(ShowBase):
                 myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_boxes, 'bomb_boost', extraArgs=[j], appendTask=True)
         elif y == 2:
             self.session["score"] *= 2
+    def heart_boost(self, boost):
+        if self.session["hearts_counter"] < 3:
+            self.session["hearts_obj"][self.session["hearts_counter"] + 1].setImage('assets/images/heart.png')
+            self.session["hearts_obj"][self.session["hearts_counter"] + 1].setTransparency(1)
+            self.session["hearts_counter"] += 1
     def bomb_birds(self, task):
         for x in range(3):
                 spawner(self, ObsticleType.BIRD, x)

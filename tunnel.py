@@ -194,7 +194,7 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    x = random.randint(0,3)
+    x = random.randint(0,4)
     if x == 0:
         booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
         booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
@@ -226,7 +226,15 @@ def spawn_boosters(self):
         blight.setColor((1, 1, 0, 1))
         plnp = booster.real_model.attachNewNode(blight)
         booster.real_model.setLight(plnp)
-        self.session["boosters"].append(booster)        
+        self.session["boosters"].append(booster)      
+    elif x == 4:
+        booster = Booster(self, "assets/models/mushroom/MushroomStalk", self.heart_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.1/2)
+        booster.model.reparentTo(render)
+        self.session["boosters"].append(booster)
+
 
 def remove_obj(self, obj):
     if type(obj) is not Booster:
