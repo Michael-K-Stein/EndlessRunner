@@ -15,7 +15,6 @@ class Game(ShowBase):
             self.DEBUG = True
 
         init_collision_detection(self)
-        self.init_music()
 
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
@@ -42,6 +41,8 @@ class Game(ShowBase):
         self.bird_spawner_timer = ClockObject()
         self.game_speed_timer = ClockObject()
 
+        self.tasks_running = False
+
         self.register_keys()
 
         # Where ralph is if he were standing (for laning)
@@ -58,6 +59,9 @@ class Game(ShowBase):
             task = scan.overlay(self)
             self.accept("c", self.scanner.calibrate)
 
+        if not self.DEBUG:
+            self.scanner.stop()
+
         self.show_menu()
 
     def create_game_session(self):
@@ -71,7 +75,7 @@ class Game(ShowBase):
             "score": 0,
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
-            "hearts_counter": 3,
+            "hearts_counter": 5,
             "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
@@ -79,13 +83,18 @@ class Game(ShowBase):
             "sleep_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.68, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.53, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
+                 ],
             "player_immune": False,
             "player_immune_start": 0,
             "immune_duration": 3,
-            "tunnel_type": "day"
+            "tunnel_type": STARTING_TUNNEL_TYPE,
+            "prev_tunnel_type": STARTING_TUNNEL_TYPE,
+            "prev_tunnel_type_cycle": 0
         }
         if not self.tunnels_moving:
             cont_tunnel(self)
@@ -103,7 +112,6 @@ class Game(ShowBase):
         self.accept("l", self.show_menu)
 
     def show_menu(self):
-        self.stop_tasks()
         if not self.DEBUG:
             self.scanner = scan.Scanner(self.scanner_callback)
             self.scanner.run_scanner()
@@ -121,7 +129,7 @@ class Game(ShowBase):
         self.taskMgr.add(lambda task: spawner_timer(self, task), "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
-        self.taskMgr.add(self.manage_music, "MusicTrackManager")
+        # self.taskMgr.add(self.manage_music, "MusicTrackManager")
 
     def stop_tasks(self):
         self.tasks_running = False
@@ -130,14 +138,19 @@ class Game(ShowBase):
         self.taskMgr.remove("GameSpeedAcceleration")
         if not self.DEBUG:
             self.scanner.stop()
-        self.taskMgr.remove("MusicTrackManager")
+        #self.taskMgr.remove("MusicTrackManager")
         self.current_playing_music.stop()
 
     def start_game(self):
         if "session" in dir(self):
             for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"] + self.session["boosters"]:
-                node.remove_node()
+                if type(node) is Booster:
+                    node.model.remove_node()
+                    node.real_model.remove_node()
+                else:
+                    node.remove_node()
         self.create_game_session()
+        self.init_music()
         self.gameMenu.hide()
         self.session["game_speed"] = (-GAME_DEFAULT_SPEED * 1) if self.DEBUG else -GAME_DEFAULT_SPEED
 
@@ -148,6 +161,7 @@ class Game(ShowBase):
         self.init_soundeffects()
         self.session["playback_speed"] = 1
         self.session["hit"] = 0
+        self.change_music(TUNNEL_TYPES_MUSIC[STARTING_TUNNEL_TYPE])
 
     def quit_game(self):
         if not self.DEBUG:
@@ -160,18 +174,18 @@ class Game(ShowBase):
         self.scooter_soundeffect = base.loader.loadSfx('assets/soundeffects/scooter.mp3')
 
     def init_music(self):
-        music_files = [os.path.join(MUSIC_FILES_PATH, file) for file in os.listdir(MUSIC_FILES_PATH) if os.path.isfile(os.path.join(MUSIC_FILES_PATH, file))]
-        print(music_files)
-        
-        self.music_queue = queue.Queue()
-        for file in music_files:
-            self.music_queue.put(base.loader.loadSfx(file))
-        
-        # For now, let's take the first track in the queue and just play it, although it's a bit dirty
-        self.current_playing_music = self.music_queue.get()
-        self.current_playing_music.setLoopCount(random.randint(2, 4))
-        self.current_playing_music.play()
+        for tunnel_type in ALL_TUNNEL_TYPES:
+            TUNNEL_TYPES_MUSIC[tunnel_type] = base.loader.loadSfx(f"assets/music/music_{tunnel_type}.wav")
+        self.change_music(TUNNEL_TYPES_MUSIC[STARTING_TUNNEL_TYPE], False)
     
+    def change_music(self, song, play=True):
+        if "current_playing_music" in self.__dict__:
+            self.current_playing_music.stop()
+        self.current_playing_music = song
+        self.current_playing_music.setLoop(True)
+        if play:
+            self.current_playing_music.play()
+
     def manage_music(self, task):
         if self.current_playing_music.status() == AudioSound.READY: # Checks if the sound track has ended
             next_track = self.music_queue.get()
@@ -212,7 +226,6 @@ class Game(ShowBase):
         elif action == "CAMERA":
             if "labels" in dir(self):
                 self.labels[0].setText("Camera can't fully see you")
-
 
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
@@ -337,6 +350,7 @@ class Game(ShowBase):
     def start_immune(self, durration):
         self.session["player_immune"] = True
         myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_immune, 'stop_immune')
+
     def stop_immune(self, task):
         self.session["player_immune"] = False
         self.ralph.setAlphaScale(0.35)

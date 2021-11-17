@@ -6,6 +6,7 @@ TUNNELS_COUNT = 8
 # Code to initialize the tunnel
 def init_tunnel(self):
     self.tunnel = [None] * TUNNELS_COUNT
+    self.tunnel_types = [None] * TUNNELS_COUNT
     init_tunnel_models(self)
     # for x in range(TUNNELS_COUNT):
     #     #self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
@@ -31,6 +32,8 @@ def remodel_tunnels(self, v=-1):
 def init_tunnel_models(self):
     create_tunnel_seg(self, 0, render, 'day')#self.session["tunnel_type"]
     for x in range(1, TUNNELS_COUNT):
+        if self.tunnel[x] is not None:
+            self.tunnel[x].removeNode()
         create_tunnel_seg(self, x, self.tunnel[x - 1], 'day')
 
 def change_type_grandually(self, type):
@@ -42,6 +45,7 @@ def create_tunnel_seg(self, index, parent, type):
     x = index
     #self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
     self.tunnel[x] = loader.loadModel(f'assets/models/tunnels/tunnel_{type}/tunnel')
+    self.tunnel_types[x] = type
     # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
     self.tunnel[x].reparentTo(parent)
     self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
@@ -53,23 +57,30 @@ def cont_tunnel(self):
     #if self.tunnel_counter % 16 == 0:
     #    self.tunnel_color = random.randint(0,3)
     if "session" in self.__dict__:
-        TUNNEL_VERAETIES = 4  # THATS HOW ITS WRITTEN IDC WHAT YOU SAY
-        SCORE_TIME_MULTIPLE = 10000
-        time_cycle = self.session["score"] % ((TUNNEL_VERAETIES - 1) * 2 * SCORE_TIME_MULTIPLE)  # For each type, we have 1 day
-        
-        if time_cycle // SCORE_TIME_MULTIPLE % 2 == 0:
-            self.session["tunnel_type"] = "day"
-        elif time_cycle <= 1 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "night"
-        elif time_cycle <= 3 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "jungle"
-        elif time_cycle <= 5 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "modern"
+        #tunnel_type_cycle = self.session["score"] % ((TUNNEL_VERAETIES_COUNT - 1) * 2 * TUNNEL_SCORE_TIME_MULTIPLE) // TUNNEL_SCORE_TIME_MULTIPLE  # For each type, we have 1 day
+        tunnel_type_cycle = self.session["time"] % ((TUNNEL_VERAETIES_COUNT - 1) * 2 * TUNNEL_TIME_MULTIPLIER) // TUNNEL_TIME_MULTIPLIER
+        # print(f"Current time {self.session['time']}")
+        # print(f"Prev time {self.session['prev_tunnel_type_time']}")
+        # if self.session["time"] > TUNNEL_TIME_MULTIPLIER and (round(self.session["time"]) == self.session["prev_tunnel_type_time"] + TUNNEL_MUSIC_DELAY or round(self.session["time"]) == self.session["prev_tunnel_type_time"] + TUNNEL_MUSIC_DELAY + 1):
+        #     self.change_music(TUNNEL_TYPES_MUSIC[self.session["tunnel_type"]])
+        # if self.tunnel_types[0] == self.session["tunnel_type"]:
+        #     self.change_music(TUNNEL_TYPES_MUSIC[self.session["tunnel_type"]])
+
+        if self.session["prev_tunnel_type_cycle"] != tunnel_type_cycle:
+            self.session["prev_tunnel_type_cycle"] = tunnel_type_cycle
+            self.session["prev_tunnel_type_time"] = round(self.session["time"])
+            if tunnel_type_cycle % 2 != 0:
+                self.session["tunnel_type"] = NIGHT_TUNNEL_TYPE
+            else:
+                self.session["prev_tunnel_type"] = self.session["tunnel_type"]
+                self.session["tunnel_type"] = random.choice(TUNNEL_TYPES)
+            # self.change_music(TUNNEL_TYPES_MUSIC[self.session["tunnel_type"]])
         change_type_grandually(self, self.session["tunnel_type"])
     # remodel_tunnels(self, self.tunnel_color)
 
     # This line uses slices to take the front of the list and put it on the back
     self.tunnel = self.tunnel[1:] + self.tunnel[0:1]
+    self.tunnel_types = self.tunnel_types[1:] + self.tunnel_types[0:1]
     # Set the front segment (which was at TUNNEL_SEGMENT_LENGTH) to 0, which is where the previous segment started
     self.tunnel[0].setZ(0)
     # Reparent the front to render to preserve the hierarchy outlined above
@@ -84,7 +95,7 @@ def cont_tunnel(self):
     # Set up the tunnel to move one segment and then call contTunnel again to make the tunnel move infinitely
     self.tunnelMove = Sequence(
         LerpFunc(self.tunnel[0].setZ,
-                    duration=TUNNEL_TIME / (self.session["game_speed"] / -GAME_DEFAULT_SPEED),
+                    duration=TUNNEL_TIME / (2 * self.session["game_speed"] / -GAME_DEFAULT_SPEED),
                     fromData=0,
                     toData=TUNNEL_SEGMENT_LENGTH * .305), # speed
         Func(cont_tunnel, self)
