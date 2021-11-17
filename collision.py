@@ -4,6 +4,9 @@ from tunnel import *
 def handle_prize_collision(self, entry):
     self.session["score"] += PRIZE_REWARD
 
+def handle_boost_collision(self, boost):
+    boost.collide()
+
 def init_collision_detection(self):
     self.cTrav = CollisionTraverser()
 
@@ -61,6 +64,14 @@ def prize_collision(self, prize):
             if self.ralph.getY() < 0:
                 handle_prize_collision(self, None)
                 remove_obj(self, prize)
+                self.prize_soundeffect.play()
+
+def boost_collision(self, boost):
+    if boost.model.getZ() >= self.ralph.getZ(): 
+        if self.ralph.getX() == 0:
+            if self.ralph.getY() < 0:
+                handle_boost_collision(self, boost)
+                remove_obj(self, boost)
                 self.prize_soundeffect.play()
 
 def is_out_of_frame(self, obj):
