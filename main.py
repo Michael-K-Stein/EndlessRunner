@@ -4,6 +4,7 @@ from collision import *
 from tunnel import *
 import player
 import scan
+import queue
 
 class Game(ShowBase):
     def __init__(self):
@@ -102,7 +103,7 @@ class Game(ShowBase):
         self.taskMgr.add(lambda task: spawner_timer(self, task), "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
-        self.background_music.play()
+        self.taskMgr.add(self.manage_music, "MusicTrackManager")
 
     def stop_tasks(self):
         self.tasks_running = False
@@ -111,7 +112,8 @@ class Game(ShowBase):
         self.taskMgr.remove("GameSpeedAcceleration")
         if not self.DEBUG:
             self.scanner.stop()
-        self.background_music.stop()
+        self.taskMgr.remove("MusicTrackManager")
+        self.current_playing_music.stop()
 
     def start_game(self):
         if "session" in dir(self):
@@ -139,9 +141,28 @@ class Game(ShowBase):
         self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
-        self.background_music = base.loader.loadSfx('assets/music/music.wav')
-        self.background_music.setLoop(True)
-        # self.playback_speed = 1
+        music1 = base.loader.loadSfx('assets/music/music.wav')
+        music1.setLoopCount(random.randint(2, 4))
+        music2 = base.loader.loadSfx('assets/music/music2.wav')
+        music2.setLoopCount(random.randint(2, 4))
+
+        self.current_playing_music = music1
+        self.music_queue = queue.Queue()
+        self.music_queue.put(music2)
+        self.music_queue.put(music1)
+
+        self.current_playing_music.play()
+    
+    def manage_music(self, task):
+        print(self.current_playing_music.status())
+        if self.current_playing_music.status() == AudioSound.READY:
+            next_track = self.music_queue.get()
+            self.music_queue.put(self.current_playing_music)
+            next_track.setLoopCount(random.randint(2, 4))
+            self.current_playing_music = next_track
+            self.current_playing_music.play()
+        
+        return Task.cont
     
     def init_fog(self):
         self.fog = Fog('distanceFog')
@@ -213,7 +234,7 @@ class Game(ShowBase):
             if self.session["playback_speed"] < MAX_BACKGROUND_MUSIC_SPEED:
                 self.session["playback_speed"] += 0.002
             # self.background_music.setPlayRate(self.playback_speed)
-            self.background_music.setPlayRate(self.session["playback_speed"])
+            self.current_playing_music.setPlayRate(self.session["playback_speed"])
             # self.birds_y_speed += BIRDS_X_ACCELERATION
             self.game_speed_timer.reset()
         return Task.cont

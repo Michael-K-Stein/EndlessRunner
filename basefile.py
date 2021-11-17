@@ -22,6 +22,7 @@ from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 from panda3d.core import TransparencyAttrib
+from panda3d.core import AudioSound
 import random
 import math
 import sys
