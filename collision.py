@@ -53,6 +53,7 @@ def prize_collision(self, prize):
     if prize.getZ() >= self.ralph.getZ(): 
         if self.ralph.getX() == 0:
             if self.ralph.getY() < 0:
+                self.prize_soundeffect.play()
                 remove_obj(self, prize)
 
 def is_out_of_frame(self, obj):

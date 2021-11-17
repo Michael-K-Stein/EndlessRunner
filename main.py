@@ -135,7 +135,8 @@ class Game(ShowBase):
         sys.exit(0)
     
     def init_soundeffects(self):
-        self.hit_soundeffect = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
         self.background_music = base.loader.loadSfx('assets/music/music.wav')
