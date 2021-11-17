@@ -107,7 +107,17 @@ class Scanner:
         action = None
         if self.is_calibrating:
             return
-        if self.frame_center_y - self.person_y > self.jump_thresh:
+        if self.person_y - self.frame_center_y  >  self.crouch_thresh and \
+            self.person_x > self.frame_center_x + self.left_right_thresh:
+            action = "RIGHT_TOOK"
+        elif self.person_y - self.frame_center_y  >  self.crouch_thresh and \
+            self.person_x < self.frame_center_x - self.left_right_thresh:
+            action = "LEFT_TOOK"
+        elif self.person_y - self.frame_center_y  >  self.crouch_thresh and \
+            not self.person_x < self.frame_center_x - self.left_right_thresh and \
+            not self.person_x > self.frame_center_x + self.left_right_thresh:
+            action = "LEFT_TOOK"
+        elif self.frame_center_y - self.person_y > self.jump_thresh:
             action = "JUMP"
         elif self.person_y - self.frame_center_y  >  self.crouch_thresh:
             action = "TOOK"
@@ -121,7 +131,14 @@ class Scanner:
         if action is not None:
             if self.last_action != action:
                 self.last_action = action
-                self.callback(action)
+                if action == "LEFT_TOOK":
+                    self.callback("LEFT")
+                    self.callback("TOOK")
+                elif action == "RIGHT_TOOK":
+                    self.callback("RIGHT")
+                    self.callback("TOOK")
+                else:
+                    self.callback(action)
                 print(action)
 
     def is_centered(self):
@@ -142,12 +159,15 @@ class Scanner:
             ret, frame = self._cap.read()
             frame=cv2.flip(frame, 1)
             # resizing for faster detection
-            frame = cv2.resize(frame, (360, 240))
-            
-            #start of openpose:
-            net.setInput(cv2.dnn.blobFromImage(frame, 1.0, (360, 240), (127.5, 127.5, 127.5), swapRB=True, crop=False))
-            out = net.forward()
-            out = out[:, :19, :, :] 
+            try:
+                frame = cv2.resize(frame, (360, 240))
+                
+                #start of openpose:
+                net.setInput(cv2.dnn.blobFromImage(frame, 1.0, (360, 240), (127.5, 127.5, 127.5), swapRB=True, crop=False))
+                out = net.forward()
+                out = out[:, :19, :, :] 
+            except cv2.error:
+                pass
 
             assert(len(BODY_PARTS) == out.shape[1])
 
