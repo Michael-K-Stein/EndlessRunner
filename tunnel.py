@@ -1,4 +1,5 @@
 from basefile import *
+from boosters import *
 
 TUNNELS_COUNT = 8
 
@@ -168,15 +169,17 @@ def spawn_box(self, lane):
 
 def spawn_prize(self, lane):
     prize = None
-    x = random.randint(0,2)
+    extra_scale_factor = 1
+    x = 3#random.randint(0,3)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
-    #elif x == 3:
-    #    prize = self.loader.loadModel("assets/models/objects/MarioBox.obj")
+    elif x == 3:
+        spawn_boosters(self)
+        return
         """prize_light = AmbientLight('alight')
         prize_light.setColor((0.2, 0.2, 0.2, 1))
         plnp = prize.attachNewNode(prize_light)
@@ -188,7 +191,7 @@ def spawn_prize(self, lane):
 
     prize.reparentTo(render)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
-    prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
+    prize.setScale(prize, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor)
     col = prize.attachNewNode(CollisionNode('prize'))
     col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.7))
     if self.DEBUG:
@@ -197,13 +200,25 @@ def spawn_prize(self, lane):
 
     self.session["prizes"].append(prize)
 
+def spawn_boosters(self):
+    booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
+    booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+    booster.model.setHpr(0,-90,0)
+    booster.scale(0.1)
+    booster.model.reparentTo(render)
+    self.session["boosters"].append(booster)
+
 def remove_obj(self, obj):
-    obj.remove_node()
-    if obj in self.session["birds"]:
-        self.session["birds"].remove(obj)
-    elif obj in self.session["boxes"]:
-        self.session["boxes"].remove(obj)
-    elif obj in self.session["prizes"]:
-        self.session["prizes"].remove(obj)
+    if type(obj) is not Booster:
+        obj.remove_node()
+        if obj in self.session["birds"]:
+            self.session["birds"].remove(obj)
+        elif obj in self.session["boxes"]:
+            self.session["boxes"].remove(obj)
+        elif obj in self.session["prizes"]:
+            self.session["prizes"].remove(obj)
+        else:
+            pass
     else:
-        pass
+        obj.model.remove_node()
+        self.session["boosters"].remove(obj)
