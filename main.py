@@ -307,10 +307,27 @@ class Game(ShowBase):
         boost.real_model.setH(45)
         boost.real_model.setScale(0.5)
         self.session["sleep_boost"] = True
-        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_sleep_boost, 'stop_sleep_boost', extraArgs = [boost], appendTask=True)
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME * 2, self.stop_sleep_boost, 'stop_sleep_boost', extraArgs = [boost], appendTask=True)
     def stop_sleep_boost(self, boost, task):
         boost.real_model.remove_node()
         self.session["sleep_boost"] = False
+
+    def surprise_boost(self, boost):
+        y = random.randint(0,2)
+        if y == 0:
+            for x in range(20):
+                myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_birds, 'bomb_boost')
+        elif y == 1:
+            j = random.randint(0,2)
+            for x in range(20):
+                myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_boxes, 'bomb_boost', extraArgs=[j], appendTask=True)
+        elif y == 2:
+            self.session["score"] *= 2
+    def bomb_birds(self, task):
+        for x in range(3):
+                spawner(self, ObsticleType.BIRD, x)
+    def bomb_boxes(self, j, task):
+        spawner(self, ObsticleType.BOX, j)
 
     def start_immune(self, durration):
         self.session["player_immune"] = True
