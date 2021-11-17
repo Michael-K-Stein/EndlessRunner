@@ -139,7 +139,11 @@ class Game(ShowBase):
     def start_game(self):
         if "session" in dir(self):
             for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"] + self.session["boosters"]:
-                node.remove_node()
+                if type(node) is Booster:
+                    node.model.remove_node()
+                    node.real_model.remove_node()
+                else:
+                    node.remove_node()
         self.create_game_session()
         self.gameMenu.hide()
         self.session["game_speed"] = (-GAME_DEFAULT_SPEED * 1) if self.DEBUG else -GAME_DEFAULT_SPEED
