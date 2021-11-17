@@ -146,7 +146,8 @@ class Game(ShowBase):
         self.session["hit"] = 0
 
     def quit_game(self):
-        self.scanner.stop()
+        if not self.DEBUG:
+            self.scanner.stop()
         sys.exit(0)
 
     def init_soundeffects(self):
