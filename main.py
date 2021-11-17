@@ -132,7 +132,6 @@ class Game(ShowBase):
             x.setTransparency(1)
 
         self.start_tasks()
-        self.init_music()
         self.init_soundeffects()
         self.session["playback_speed"] = 1
         self.session["hit"] = 0
