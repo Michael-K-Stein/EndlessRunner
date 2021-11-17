@@ -43,6 +43,7 @@ def player_hit(self):
         self.session["hearts_obj"][self.session["hearts_counter"] - 1].setImage('assets/images/broken_heart.png')
         self.session["hearts_obj"][self.session["hearts_counter"] - 1].setTransparency(1)
     else:
+        self.lastscore_text = int(self.session["score"])
         self.stop_tasks()
         self.show_menu()
     self.session["hearts_counter"] -= 1

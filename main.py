@@ -19,6 +19,7 @@ class Game(ShowBase):
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
         self.highscore_text = OnscreenText(text="Highscore: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.18), scale=.08)
+        self.lastscore_text = 0
 
         self.tunnel_color = 0
         self.tunnel_counter = 0
@@ -74,16 +75,20 @@ class Game(ShowBase):
             "score": 0,
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
-            "hearts_counter": 3,
+            "hearts_counter": 5,
             "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
             "score_boost": False,
+            "sleep_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.68, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.53, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
+                 ],
             "player_immune": False,
             "player_immune_start": 0,
             "immune_duration": 3,
@@ -116,7 +121,7 @@ class Game(ShowBase):
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
                   OnscreenText(text="(White Circle => Good | Red Circle => Bad)", parent=self.gameMenu, scale=0.04, pos = (0,-0.39)),
-                  OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
+                  OnscreenText(text=f"High score: {int(self.high_score)}\t Score: {int(self.lastscore_text)}" , parent=self.gameMenu, scale=0.07, pos = (-0.1,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
     def start_tasks(self):
@@ -138,9 +143,12 @@ class Game(ShowBase):
 
     def start_game(self):
         if "session" in dir(self):
-            for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"]:
-                node.remove_node()
-        init_tunnel_models(self)
+            for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"] + self.session["boosters"]:
+                if type(node) is Booster:
+                    node.model.remove_node()
+                    node.real_model.remove_node()
+                else:
+                    node.remove_node()
         self.create_game_session()
         self.init_music()
         self.gameMenu.hide()
@@ -161,8 +169,9 @@ class Game(ShowBase):
         sys.exit(0)
 
     def init_soundeffects(self):
-        self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
-        self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
+        self.hit_soundeffect     = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.prize_soundeffect   = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
+        self.scooter_soundeffect = base.loader.loadSfx('assets/soundeffects/scooter.mp3')
 
     def init_music(self):
         for tunnel_type in ALL_TUNNEL_TYPES:
@@ -246,12 +255,15 @@ class Game(ShowBase):
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
+            self.session["score"] += -self.session["game_speed"] * 20
             score_addr = -self.session["game_speed"] * 20
             if self.session["score_boost"]:
                 score_addr *= SCORE_BOOST_MULTIPLIER
             self.session["score"] += score_addr
-        self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
-        self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
+        
+        self.hit_text.text = f'Score: {int(self.session["score"])}'
+        self.highscore_text.text = f'Highscore: {int(self.high_score)}'
+        
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 
@@ -274,10 +286,12 @@ class Game(ShowBase):
 
     def scooter_boost(self, boost):
         if not self.session["speed_boost"]:
-            boost.real_model.reparentTo(self.ralph)
-            boost.real_model.setPos(0,0,0)
-            self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
-            self.session["speed_boost"] = True
+            if self.scooter_soundeffect.status() != AudioSound.PLAYING:
+                boost.real_model.reparentTo(self.ralph)
+                boost.real_model.setPos(0,0,0)
+                self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
+                self.session["speed_boost"] = True
+                self.scooter_soundeffect.play()
             #self.session["tmp_accelerate"] = self.getRealTime() + 5
 
             self.start_immune(5)
@@ -295,11 +309,38 @@ class Game(ShowBase):
         boost.real_model.setH(45)
         boost.real_model.setScale(0.1)
         self.session["score_boost"] = True
-        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
-
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_dragon_boost', extraArgs = [boost], appendTask=True)
     def stop_dragon_boost(self, boost, task):
         boost.real_model.remove_node()
         self.session["score_boost"] = False
+
+    def sleep_boost(self, boost):
+        boost.real_model.reparentTo(self.ralph)
+        boost.real_model.setPos(0,0,5)
+        boost.real_model.setH(45)
+        boost.real_model.setScale(0.5)
+        self.session["sleep_boost"] = True
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME * 2, self.stop_sleep_boost, 'stop_sleep_boost', extraArgs = [boost], appendTask=True)
+    def stop_sleep_boost(self, boost, task):
+        boost.real_model.remove_node()
+        self.session["sleep_boost"] = False
+
+    def surprise_boost(self, boost):
+        y = random.randint(0,2)
+        if y == 0:
+            for x in range(20):
+                myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_birds, 'bomb_boost')
+        elif y == 1:
+            j = random.randint(0,2)
+            for x in range(20):
+                myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_boxes, 'bomb_boost', extraArgs=[j], appendTask=True)
+        elif y == 2:
+            self.session["score"] *= 2
+    def bomb_birds(self, task):
+        for x in range(3):
+                spawner(self, ObsticleType.BIRD, x)
+    def bomb_boxes(self, j, task):
+        spawner(self, ObsticleType.BOX, j)
 
     def start_immune(self, durration):
         self.session["player_immune"] = True

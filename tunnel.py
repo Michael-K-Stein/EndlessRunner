@@ -95,7 +95,7 @@ def cont_tunnel(self):
     # Set up the tunnel to move one segment and then call contTunnel again to make the tunnel move infinitely
     self.tunnelMove = Sequence(
         LerpFunc(self.tunnel[0].setZ,
-                    duration=TUNNEL_TIME / (self.session["game_speed"] / -GAME_DEFAULT_SPEED),
+                    duration=TUNNEL_TIME / (2 * self.session["game_speed"] / -GAME_DEFAULT_SPEED),
                     fromData=0,
                     toData=TUNNEL_SEGMENT_LENGTH * .305), # speed
         Func(cont_tunnel, self)
@@ -135,10 +135,11 @@ def add_tunnel_props(self, tunnel):
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
         for _ in range(random.randint(1, 4)):
-            if random.randint(0,1) % 2 == 0:
-                spawner(self, ObsticleType.BIRD, random.randint(0, 2))
-            else:
-                spawner(self, ObsticleType.BOX, random.randint(0, 2))
+            if not self.session["sleep_boost"]:
+                if random.randint(0,1) % 2 == 0:
+                    spawner(self, ObsticleType.BIRD, random.randint(0, 2))
+                else:
+                    spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
     if random.randint(0,PRIZE_CHANCE) == 7:
         spawn_prize(self, random.randint(0, 2))
@@ -181,25 +182,16 @@ def spawn_box(self, lane):
 def spawn_prize(self, lane):
     prize = None
     extra_scale_factor = 1
-    x = random.randint(0,3)
+    x = random.randint(0,6)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
-    elif x == 3:
+    elif x >= 3:
         spawn_boosters(self)
         return
-
-        """prize_light = AmbientLight('alight')
-        prize_light.setColor((0.2, 0.2, 0.2, 1))
-        plnp = prize.attachNewNode(prize_light)
-        prize.setLight(plnp)
-        prize.showTightBounds()
-        prize.setScale(0.003, 0.003, 0.003)
-        prize.setHpr(0, 0, 45)"""
-
 
     prize.reparentTo(render)
     prize.setPos(((lane - 1) * 0.7), -0.7, OBSTACLE_SPWN_DEPTH)
@@ -213,7 +205,7 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    x = random.randint(0,1)
+    x = random.randint(0,3)
     if x == 0:
         booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
         booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
@@ -228,6 +220,24 @@ def spawn_boosters(self):
         booster.scale(0.1/14)
         booster.model.reparentTo(render)
         self.session["boosters"].append(booster)
+    elif x == 2:
+        booster = Booster(self, "assets/models/objects/OldBed.egg", self.sleep_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.1/4)
+        booster.model.reparentTo(render)
+        self.session["boosters"].append(booster)
+    elif x == 3:
+        booster = Booster(self, "assets/models/Cube", self.surprise_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.07)
+        booster.model.reparentTo(render)
+        blight = AmbientLight('alight')
+        blight.setColor((1, 1, 0, 1))
+        plnp = booster.real_model.attachNewNode(blight)
+        booster.real_model.setLight(plnp)
+        self.session["boosters"].append(booster)        
 
 def remove_obj(self, obj):
     if type(obj) is not Booster:

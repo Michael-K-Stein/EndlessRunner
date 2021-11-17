@@ -11,6 +11,8 @@ SPEED_BOOST_MULTIPLIER = 3
 
 SCORE_BOOST_MULTIPLIER = 77
 
+SLEEP_BOOSTER_TIME = 3
+
 
 class Booster():
     def __init__(self, game, model_path, boost_call_back):
