@@ -1,9 +1,6 @@
 from basefile import *
 from tunnel import *
 
-def handle_collision(self, entry):
-    player_hit(self)
-
 def handle_prize_collision(self, entry):
     self.session["score"] += PRIZE_REWARD
 
@@ -18,6 +15,9 @@ def init_collision_detection(self):
     self.notifier.addInPattern('%fn-into-%in')
     self.notifier.addAgainPattern('%fn-again-%in')
     
+    def handle_collision(entry):
+        player_hit(self)
+
     # magic. Do not touch!
     self.accept('box-into-ralph', handle_collision)
     self.accept('ralph-into-box', handle_collision)
