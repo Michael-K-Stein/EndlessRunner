@@ -50,12 +50,11 @@ def player_hit(self):
     #self.hit_text.text = 'Hits: ' + str(self.hit)
 
 def prize_collision(self, prize):
-    if prize.getZ() >= self.ralph.getZ(): 
-        if self.ralph.getX() == 0:
-            if self.ralph.getY() < 0:
-                handle_prize_collision(self, None)
-                remove_obj(self, prize)
-                self.prize_soundeffect.play()
+    if self.ralph.getX() == prize.getX() \
+            and math.ceil(prize.getZ()) == math.ceil(self.ralph.getZ()): # Dirty collision check
+        handle_prize_collision(self, None)
+        remove_obj(self, prize)
+        self.prize_soundeffect.play()
 
 def is_out_of_frame(self, obj):
     if obj not in self.session["prizes"]:

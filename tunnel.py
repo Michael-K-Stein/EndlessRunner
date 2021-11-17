@@ -85,7 +85,7 @@ def spawner(self, type, lane):
 def spawn_bird(self, lane):
     bird = self.loader.loadModel("assets/models/bluebird/bluebird")
     bird.reparentTo(render)
-    bird.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH-2)
+    bird.setPos(((lane - 1) * MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH-2)
     bird.setScale(BIRD_BASE_SCALE)
     bird.setHpr(90, 90, 90)
 
@@ -130,7 +130,7 @@ def spawn_prize(self, lane):
         prize.setHpr(0, 0, 45)"""
         
     prize.reparentTo(render)
-    prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+    prize.setPos(((lane - 1) * 0.7), -0.7, OBSTACLE_SPWN_DEPTH)
     prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
     col = prize.attachNewNode(CollisionNode('prize'))
     col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.7))
