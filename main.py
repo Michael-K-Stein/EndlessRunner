@@ -19,6 +19,7 @@ class Game(ShowBase):
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
         self.highscore_text = OnscreenText(text="Highscore: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.18), scale=.08)
+        self.lastscore_text = 0
 
         self.tunnel_color = 0
         self.tunnel_counter = 0
@@ -109,7 +110,7 @@ class Game(ShowBase):
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
                   OnscreenText(text="(White Circle => Good | Red Circle => Bad)", parent=self.gameMenu, scale=0.04, pos = (0,-0.39)),
-                  OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
+                  OnscreenText(text=f"High score: {int(self.high_score)}\t Score: {int(self.lastscore_text)}" , parent=self.gameMenu, scale=0.07, pos = (-0.1,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
     def start_tasks(self):
@@ -219,8 +220,8 @@ class Game(ShowBase):
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["game_speed"] * 20
-        self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
-        self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
+        self.hit_text.text = f'Score: {int(self.session["score"])}'
+        self.highscore_text.text = f'Highscore: {int(self.high_score)}'
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 
