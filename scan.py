@@ -219,7 +219,7 @@ class Scanner:
             self.frame = frame
 
             if self.is_calibrating:
-                frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
+                frame = cv2.addWeighted(frame,0.6,self.overlay,0.9,1)
                 if self.is_centered():
                     if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:
                         self.is_calibrating = not self.calibrate()
