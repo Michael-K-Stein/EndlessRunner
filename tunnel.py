@@ -64,6 +64,20 @@ def add_tunnel_props(self, tunnel):
     alnp = pipe.attachNewNode(alight)
     pipe.setLight(alnp)
 
+    if random.randint(0, 3) == 1:
+        knife = self.loader.loadModel("assets/models/tunnel_varients/Knife/Knife")
+        knife.setScale(0.05)
+        knife.setPos(9,-4,0)
+        knife.setP(45)
+        knife.reparentTo(tunnel)
+
+    if random.randint(0, 4) == 1:
+        switch = self.loader.loadModel("assets/models/tunnel_varients/Switch/Switch")
+        switch.setScale(3)
+        switch.setPos(-9.5,0,0)
+        switch.setHpr(90, 180, 90)
+        switch.reparentTo(tunnel)
+
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
         for _ in range(random.randint(1, 3)):
@@ -119,7 +133,7 @@ def spawn_prize(self, lane):
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
-        
+
     prize.reparentTo(render)
     #prize.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -1.3, OBSTACLE_SPWN_DEPTH)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
