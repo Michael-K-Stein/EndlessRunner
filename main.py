@@ -310,7 +310,7 @@ class Game(ShowBase):
         self.session["sleep_boost"] = False
 
     def surprise_boost(self, boost):
-        y = random.randint(0,1)
+        y = random.randint(0,2)
         if y == 0:
             for x in range(20):
                 myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_birds, 'bomb_boost')
@@ -318,6 +318,8 @@ class Game(ShowBase):
             j = random.randint(0,2)
             for x in range(20):
                 myTask = self.taskMgr.doMethodLater(0.3*x, self.bomb_boxes, 'bomb_boost', extraArgs=[j], appendTask=True)
+        elif y == 2:
+            self.session["score"] *= 2
     def bomb_birds(self, task):
         for x in range(3):
                 spawner(self, ObsticleType.BIRD, x)
