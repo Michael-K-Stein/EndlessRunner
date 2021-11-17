@@ -31,6 +31,8 @@ import numpy as np
 import cv2
 import threading
 import time
+import os
+
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
@@ -73,6 +75,8 @@ STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS = 3
 PRIZE_REWARD = 777
 PRIZE_BASE_SCALE = 0.3
 PRIZE_CHANCE = 100
+
+MUSIC_FILES_PATH = 'assets/music/'
 
 FOG_LUMINECENSE = 0.2
 

@@ -146,21 +146,20 @@ class Game(ShowBase):
         self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
-        music1 = base.loader.loadSfx('assets/music/music.wav')
-        music1.setLoopCount(random.randint(2, 4))
-        music2 = base.loader.loadSfx('assets/music/music2.wav')
-        music2.setLoopCount(random.randint(2, 4))
-
-        self.current_playing_music = music1
+        music_files = [os.path.join(MUSIC_FILES_PATH, file) for file in os.listdir(MUSIC_FILES_PATH) if os.path.isfile(os.path.join(MUSIC_FILES_PATH, file))]
+        print(music_files)
+        
         self.music_queue = queue.Queue()
-        self.music_queue.put(music2)
-        self.music_queue.put(music1)
-
+        for file in music_files:
+            self.music_queue.put(base.loader.loadSfx(file))
+        
+        # For now, let's take the first track in the queue and just play it, although it's a bit dirty
+        self.current_playing_music = self.music_queue.get()
+        self.current_playing_music.setLoopCount(random.randint(2, 4))
         self.current_playing_music.play()
     
     def manage_music(self, task):
-        print(self.current_playing_music.status())
-        if self.current_playing_music.status() == AudioSound.READY:
+        if self.current_playing_music.status() == AudioSound.READY: # Checks if the sound track has ended
             next_track = self.music_queue.get()
             self.music_queue.put(self.current_playing_music)
             next_track.setLoopCount(random.randint(2, 4))
