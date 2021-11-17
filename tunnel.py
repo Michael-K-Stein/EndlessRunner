@@ -6,7 +6,7 @@ TUNNELS_COUNT = 8
 # Code to initialize the tunnel
 def init_tunnel(self):
     self.tunnel = [None] * TUNNELS_COUNT
-    change_time(self, "day")
+    init_tunnel_models(self)
     # for x in range(TUNNELS_COUNT):
     #     #self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
     #     self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel_day/tunnel')
@@ -28,22 +28,20 @@ def remodel_tunnels(self, v=-1):
         self.tunnel[TUNNELS_COUNT-1].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
         add_tunnel_props(self, self.tunnel[TUNNELS_COUNT-1])
 
-def change_time(self, time):
-    register_tunnel_seg(self, 0, render, time)
+def init_tunnel_models(self):
+    create_tunnel_seg(self, 0, render, 'day')#self.session["tunnel_type"]
     for x in range(1, TUNNELS_COUNT):
-        if self.tunnel[x] is not None:
-            self.tunnel[x].removeNode()
-        register_tunnel_seg(self, x, self.tunnel[x - 1], time)
+        create_tunnel_seg(self, x, self.tunnel[x - 1], 'day')
 
-def change_time_grandually(self, time):
+def change_type_grandually(self, type):
     if self.tunnel[TUNNELS_COUNT - 1] is not None:
         self.tunnel[TUNNELS_COUNT - 1].removeNode()
-    register_tunnel_seg(self, TUNNELS_COUNT - 1, self.tunnel[TUNNELS_COUNT - 2], time)
+    create_tunnel_seg(self, TUNNELS_COUNT - 1, self.tunnel[TUNNELS_COUNT - 2], type)
 
-def register_tunnel_seg(self, index, parent, time):
+def create_tunnel_seg(self, index, parent, type):
     x = index
     #self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
-    self.tunnel[x] = loader.loadModel(f'assets/models/tunnels/tunnel_{time}/tunnel')
+    self.tunnel[x] = loader.loadModel(f'assets/models/tunnels/tunnel_{type}/tunnel')
     # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
     self.tunnel[x].reparentTo(parent)
     self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
@@ -57,15 +55,17 @@ def cont_tunnel(self):
     if "session" in self.__dict__:
         TUNNEL_VERAETIES = 4  # THATS HOW ITS WRITTEN IDC WHAT YOU SAY
         SCORE_TIME_MULTIPLE = 10000
-        time_cycle = self.session["score"] % (TUNNEL_VERAETIES * SCORE_TIME_MULTIPLE)
-        if time_cycle <= SCORE_TIME_MULTIPLE:
-            change_time_grandually(self, "day")
-        elif time_cycle <= 2 * SCORE_TIME_MULTIPLE:
-            change_time_grandually(self, "night")
+        time_cycle = self.session["score"] % ((TUNNEL_VERAETIES - 1) * 2 * SCORE_TIME_MULTIPLE)  # For each type, we have 1 day
+        
+        if time_cycle // SCORE_TIME_MULTIPLE % 2 == 0:
+            self.session["tunnel_type"] = "day"
+        elif time_cycle <= 1 * SCORE_TIME_MULTIPLE:
+            self.session["tunnel_type"] = "night"
         elif time_cycle <= 3 * SCORE_TIME_MULTIPLE:
-            change_time_grandually(self, "jungle")
-        elif time_cycle <= 4 * SCORE_TIME_MULTIPLE:
-            change_time_grandually(self, "dark")
+            self.session["tunnel_type"] = "jungle"
+        elif time_cycle <= 5 * SCORE_TIME_MULTIPLE:
+            self.session["tunnel_type"] = "modern"
+        change_type_grandually(self, self.session["tunnel_type"])
     # remodel_tunnels(self, self.tunnel_color)
 
     # This line uses slices to take the front of the list and put it on the back
@@ -170,7 +170,7 @@ def spawn_box(self, lane):
 def spawn_prize(self, lane):
     prize = None
     extra_scale_factor = 1
-    x = 3#random.randint(0,3)
+    x = random.randint(0,3)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:
