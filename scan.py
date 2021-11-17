@@ -72,13 +72,13 @@ class Scanner:
                 break
             cur_point+=1
             if each is not None:
-                sum_x += each[0] 
+                sum_x += each[0]
                 sum_y += each[1]
                 count += 1
         
         if count == 0:
             self.person_x = 0
-            self.person_y = 0 
+            self.person_y = 0
         else:
             sum_x //= count
             sum_y //= count
@@ -122,13 +122,15 @@ class Scanner:
             if self.last_action != action:
                 self.last_action = action
                 self.callback(action)
+                print(action)
 
     def is_centered(self):
         frame_x, frame_y, _ = self.frame.shape
         frame_x //= 2
         frame_y //= 2
-        return abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
+        res = abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
             abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
+        return res
 
     def run_scanner(self):
         self.thread = threading.Thread(target=self.scan)

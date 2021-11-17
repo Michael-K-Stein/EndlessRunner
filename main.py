@@ -4,6 +4,7 @@ from collision import *
 from tunnel import *
 import player
 import scan
+from pandac.PandaModules import WindowProperties
 
 class Game(ShowBase):
     def __init__(self):
@@ -21,6 +22,10 @@ class Game(ShowBase):
         
         self.tunnel_color = 0
         self.tunnel_counter = 0
+
+        props = WindowProperties()
+        props.setTitle('Haag Simulator')
+        base.win.requestProperties(props)
 
         base.disableMouse()
         camera.setPosHpr(0, 0, 10, 0, -90, 0)
@@ -174,7 +179,7 @@ class Game(ShowBase):
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
-            box.setPos(box, self.session["birds_x_speed"] // 35, 0, 0)
+            box.setPos(box, 0, -self.session["birds_x_speed"] // 2, 0)
             if is_out_of_frame(self, box):
                 remove_obj(self, box)
 

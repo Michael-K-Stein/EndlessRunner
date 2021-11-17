@@ -97,14 +97,14 @@ def spawn_bird(self, lane):
     self.session["birds"].append(bird)
 
 def spawn_box(self, lane):
-    box = self.loader.loadModel("assets/models/crate")
+    box = self.loader.loadModel("assets/models/robot/Robot")
     box.reparentTo(render)
-    box.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.7, OBSTACLE_SPWN_DEPTH)
-    box.setScale(.3)
-    box.setHpr(90, 0, 90)
+    box.setPos(((lane-1)*0.5), -0.7, OBSTACLE_SPWN_DEPTH)
+    box.setScale(.07)
+    box.setHpr(90, 90, 90)
 
     col = box.attachNewNode(CollisionNode('box'))
-    col.node().addSolid(CollisionBox(Point3(0, 0, 0.46), 0.5, 0.5, 0.5))
+    col.node().addSolid(CollisionBox(Point3(0, 0, 0), 2, 2, 2))
     if self.DEBUG:
         col.show()
     self.cTrav.addCollider(col, self.notifier)
