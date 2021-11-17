@@ -53,18 +53,13 @@ def cont_tunnel(self):
     #if self.tunnel_counter % 16 == 0:
     #    self.tunnel_color = random.randint(0,3)
     if "session" in self.__dict__:
-        TUNNEL_VERAETIES = 4  # THATS HOW ITS WRITTEN IDC WHAT YOU SAY
-        SCORE_TIME_MULTIPLE = 10000
-        time_cycle = self.session["score"] % ((TUNNEL_VERAETIES - 1) * 2 * SCORE_TIME_MULTIPLE)  # For each type, we have 1 day
-        
-        if time_cycle // SCORE_TIME_MULTIPLE % 2 == 0:
-            self.session["tunnel_type"] = "day"
-        elif time_cycle <= 1 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "night"
-        elif time_cycle <= 3 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "jungle"
-        elif time_cycle <= 5 * SCORE_TIME_MULTIPLE:
-            self.session["tunnel_type"] = "modern"
+        tunnel_type_cycle = self.session["score"] % ((TUNNEL_VERAETIES_COUNT - 1) * 2 * TUNNEL_SCORE_TIME_MULTIPLE) // TUNNEL_SCORE_TIME_MULTIPLE  # For each type, we have 1 day
+        if self.session["prev_tunnel_type_cycle"] != tunnel_type_cycle:
+            self.session["prev_tunnel_type_cycle"] = tunnel_type_cycle
+            if tunnel_type_cycle % 2 != 0:
+                self.session["tunnel_type"] = NIGHT_TUNNEL_TYPE
+            else:
+                self.session["tunnel_type"] = random.choice(TUNNEL_TYPES)
         change_type_grandually(self, self.session["tunnel_type"])
     # remodel_tunnels(self, self.tunnel_color)
 

@@ -81,7 +81,8 @@ class Game(ShowBase):
             "player_immune": False,
             "player_immune_start": 0,
             "immune_duration": 3,
-            "tunnel_type": "day"
+            "tunnel_type": STARTING_TUNNEL_TYPE,
+            "prev_tunnel_type_cycle": 0
         }
 
     def register_keys(self):
