@@ -71,7 +71,7 @@ class Game(ShowBase):
             "score": 0,
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
-            "hearts_counter": 3,
+            "hearts_counter": 5,
             "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
@@ -79,9 +79,12 @@ class Game(ShowBase):
             "sleep_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.68, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
+                OnscreenImage(image='assets/images/heart.png', pos=(-0.53, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
-                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
+                 OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)
+                 ],
             "player_immune": False,
             "player_immune_start": 0,
             "immune_duration": 3,
