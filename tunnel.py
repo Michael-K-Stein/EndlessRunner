@@ -165,17 +165,24 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    booster = Booster(self, "assets/models/objects/soccerBall.egg", self.scooter_boost)
-    #booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
+    booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
+    booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+    booster.model.setHpr(0,-90,0)
     booster.scale(0.1)
+    booster.model.reparentTo(render)
+    self.session["boosters"].append(booster)
 
 def remove_obj(self, obj):
-    obj.remove_node()
-    if obj in self.session["birds"]:
-        self.session["birds"].remove(obj)
-    elif obj in self.session["boxes"]:
-        self.session["boxes"].remove(obj)
-    elif obj in self.session["prizes"]:
-        self.session["prizes"].remove(obj)
+    if type(obj) is not Booster:
+        obj.remove_node()
+        if obj in self.session["birds"]:
+            self.session["birds"].remove(obj)
+        elif obj in self.session["boxes"]:
+            self.session["boxes"].remove(obj)
+        elif obj in self.session["prizes"]:
+            self.session["prizes"].remove(obj)
+        else:
+            pass
     else:
-        pass
+        obj.model.remove_node()
+        self.session["boosters"].remove(obj)

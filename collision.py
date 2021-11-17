@@ -67,7 +67,7 @@ def prize_collision(self, prize):
                 self.prize_soundeffect.play()
 
 def boost_collision(self, boost):
-    if boost.getZ() >= self.ralph.getZ(): 
+    if boost.model.getZ() >= self.ralph.getZ(): 
         if self.ralph.getX() == 0:
             if self.ralph.getY() < 0:
                 handle_boost_collision(self, boost)
