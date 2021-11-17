@@ -54,20 +54,11 @@ def player_hit(self):
     self.start_immune(3)
 
 def prize_collision(self, prize):
-<<<<<<< HEAD
     if self.ralph.getX() == prize.getX() \
             and math.ceil(prize.getZ()) == math.ceil(self.ralph.getZ()): # Dirty collision check
         handle_prize_collision(self, None)
         remove_obj(self, prize)
         self.prize_soundeffect.play()
-=======
-    if prize.getZ() >= self.ralph.getZ():
-        if self.ralph.getX() == 0:
-            if self.ralph.getY() < 0:
-                handle_prize_collision(self, None)
-                remove_obj(self, prize)
-                self.prize_soundeffect.play()
->>>>>>> e2b6866ef8853e719b2d58f589f15964b97150ca
 
 def boost_collision(self, boost):
     if boost.model.getZ() >= self.ralph.getZ(): 

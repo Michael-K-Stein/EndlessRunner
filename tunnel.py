@@ -124,10 +124,11 @@ def add_tunnel_props(self, tunnel):
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
         for _ in range(random.randint(1, 4)):
-            if random.randint(0,1) % 2 == 0:
-                spawner(self, ObsticleType.BIRD, random.randint(0, 2))
-            else:
-                spawner(self, ObsticleType.BOX, random.randint(0, 2))
+            if not self.session["sleep_boost"]:
+                if random.randint(0,1) % 2 == 0:
+                    spawner(self, ObsticleType.BIRD, random.randint(0, 2))
+                else:
+                    spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
     if random.randint(0,PRIZE_CHANCE) == 7:
         spawn_prize(self, random.randint(0, 2))
@@ -202,7 +203,7 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    x = random.randint(0,1)
+    x = random.randint(0,2)
     if x == 0:
         booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
         booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
@@ -215,6 +216,13 @@ def spawn_boosters(self):
         booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
         booster.model.setHpr(0,-90,0)
         booster.scale(0.1/14)
+        booster.model.reparentTo(render)
+        self.session["boosters"].append(booster)
+    elif x == 2:
+        booster = Booster(self, "assets/models/objects/OldBed.egg", self.sleep_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.1/4)
         booster.model.reparentTo(render)
         self.session["boosters"].append(booster)
 

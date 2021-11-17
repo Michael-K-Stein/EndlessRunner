@@ -74,6 +74,7 @@ class Game(ShowBase):
             "tmp_accelerate": 0,
             "speed_boost": False,
             "score_boost": False,
+            "sleep_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
@@ -131,7 +132,7 @@ class Game(ShowBase):
 
     def start_game(self):
         if "session" in dir(self):
-            for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"]:
+            for node in self.session["birds"] + self.session["boxes"] + self.session["prizes"] + self.session["boosters"]:
                 node.remove_node()
         self.create_game_session()
         self.gameMenu.hide()
@@ -269,10 +270,21 @@ class Game(ShowBase):
         boost.real_model.setH(45)
         boost.real_model.setScale(0.1)
         self.session["score_boost"] = True
-        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_dragon_boost', extraArgs = [boost], appendTask=True)
     def stop_dragon_boost(self, boost, task):
         boost.real_model.remove_node()
         self.session["score_boost"] = False
+
+    def sleep_boost(self, boost):
+        boost.real_model.reparentTo(self.ralph)
+        boost.real_model.setPos(0,0,5)
+        boost.real_model.setH(45)
+        boost.real_model.setScale(0.5)
+        self.session["sleep_boost"] = True
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_sleep_boost, 'stop_sleep_boost', extraArgs = [boost], appendTask=True)
+    def stop_sleep_boost(self, boost, task):
+        boost.real_model.remove_node()
+        self.session["sleep_boost"] = False
 
     def start_immune(self, durration):
         self.session["player_immune"] = True
