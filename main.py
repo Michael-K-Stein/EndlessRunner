@@ -80,7 +80,8 @@ class Game(ShowBase):
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
             "player_immune": False,
             "player_immune_start": 0,
-            "immune_duration": 3
+            "immune_duration": 3,
+            "tunnel_type": "day"
         }
         if not self.tunnels_moving:
             cont_tunnel(self)
