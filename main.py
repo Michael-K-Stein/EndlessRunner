@@ -174,7 +174,7 @@ class Game(ShowBase):
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
-            box.setPos(box, -1, 0, 0)
+            box.setPos(box, -0.3, 0, 0)
             if is_out_of_frame(self, box):
                 remove_obj(self, box)
 
