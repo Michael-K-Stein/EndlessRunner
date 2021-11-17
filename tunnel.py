@@ -48,7 +48,7 @@ def cont_tunnel(self):
     # Set up the tunnel to move one segment and then call contTunnel again to make the tunnel move infinitely
     self.tunnelMove = Sequence(
         LerpFunc(self.tunnel[0].setZ,
-                    duration=TUNNEL_TIME,
+                    duration=TUNNEL_TIME / (self.session["game_speed"] / -GAME_DEFAULT_SPEED),
                     fromData=0,
                     toData=TUNNEL_SEGMENT_LENGTH * .305), # speed
         Func(cont_tunnel, self)
@@ -134,7 +134,7 @@ def spawn_box(self, lane):
 def spawn_prize(self, lane):
     prize = None
     extra_scale_factor = 1
-    x = 3#random.randint(0,3)
+    x = random.randint(0,3)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:

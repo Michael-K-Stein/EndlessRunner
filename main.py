@@ -22,6 +22,7 @@ class Game(ShowBase):
 
         self.tunnel_color = 0
         self.tunnel_counter = 0
+        self.tunnels_moving = False
 
         props = WindowProperties()
         props.setTitle('Haag Simulator')
@@ -35,7 +36,6 @@ class Game(ShowBase):
         self.init_fog()
         init_ralph(self)
         init_ralph_physics(self)
-        cont_tunnel(self)
 
         self.bird_spawner_timer = ClockObject()
         self.game_speed_timer = ClockObject()
@@ -70,7 +70,7 @@ class Game(ShowBase):
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
             "hearts_counter": 3,
-            "game_speed": 0,
+            "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
             "playback_speed": 1,
@@ -82,6 +82,9 @@ class Game(ShowBase):
             "player_immune_start": 0,
             "immune_duration": 3
         }
+        if not self.tunnels_moving:
+            cont_tunnel(self)
+            self.tunnels_moving = True
 
     def register_keys(self):
         self.accept("arrow_left", rotate, [self, "left"])
