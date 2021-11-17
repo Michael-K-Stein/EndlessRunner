@@ -1,35 +1,71 @@
 from basefile import *
 
-TUNNELS_COUNT = 16
+TUNNELS_COUNT = 8
 
 # Code to initialize the tunnel
 def init_tunnel(self):
     self.tunnel = [None] * TUNNELS_COUNT
-    for x in range(TUNNELS_COUNT):
-        self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
-        if x == 0:
-            self.tunnel[x].reparentTo(render)
-        # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
-        else:
-            self.tunnel[x].reparentTo(self.tunnel[x - 1])
-        self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
-        add_tunnel_props(self, self.tunnel[x])
+    change_time(self, "day")
+    # for x in range(TUNNELS_COUNT):
+    #     #self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel' + str(0) + '/tunnel')
+    #     self.tunnel[x] = loader.loadModel('assets/models/tunnels/tunnel_day/tunnel')
+    #     if x == 0:
+    #         self.tunnel[x].reparentTo(render)
+    #     # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
+    #     else:
+    #         self.tunnel[x].reparentTo(self.tunnel[x - 1])
+    #     self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+    #     add_tunnel_props(self, self.tunnel[x])
 
 def remodel_tunnels(self, v=-1):
     if self.tunnel[TUNNELS_COUNT-1] is not None:
         self.tunnel[TUNNELS_COUNT-1].removeNode()
-        self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+        #self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+        self.tunnel[TUNNELS_COUNT-1] = loader.loadModel(f'assets/models/tunnels/tunnel_{v}/tunnel')
         # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
         self.tunnel[TUNNELS_COUNT-1].reparentTo(self.tunnel[TUNNELS_COUNT-2])
         self.tunnel[TUNNELS_COUNT-1].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
         add_tunnel_props(self, self.tunnel[TUNNELS_COUNT-1])
 
+def change_time(self, time):
+    register_tunnel_seg(self, 0, render, time)
+    for x in range(1, TUNNELS_COUNT):
+        if self.tunnel[x] is not None:
+            self.tunnel[x].removeNode()
+        register_tunnel_seg(self, x, self.tunnel[x - 1], time)
+
+def change_time_grandually(self, time):
+    if self.tunnel[TUNNELS_COUNT - 1] is not None:
+        self.tunnel[TUNNELS_COUNT - 1].removeNode()
+    register_tunnel_seg(self, TUNNELS_COUNT - 1, self.tunnel[TUNNELS_COUNT - 2], time)
+
+def register_tunnel_seg(self, index, parent, time):
+    x = index
+    #self.tunnel[TUNNELS_COUNT-1] = loader.loadModel('assets/models/tunnels/tunnel' + str(v) + '/tunnel')
+    self.tunnel[x] = loader.loadModel(f'assets/models/tunnels/tunnel_{time}/tunnel')
+    # The rest of the segments parent to the previous one, so that by moving the front segement, the entire tunnel is moved
+    self.tunnel[x].reparentTo(parent)
+    self.tunnel[x].setPos(0, 0, -TUNNEL_SEGMENT_LENGTH)
+    add_tunnel_props(self, self.tunnel[x])
+
 # This function is called to snap the front of the tunnel to the back to simulate traveling through it
 def cont_tunnel(self):
-    self.tunnel_counter += 1
-    if self.tunnel_counter % 16 == 0:
-        self.tunnel_color = random.randint(0,3)
-    remodel_tunnels(self, self.tunnel_color)
+    #self.tunnel_counter += 1
+    #if self.tunnel_counter % 16 == 0:
+    #    self.tunnel_color = random.randint(0,3)
+    if "session" in self.__dict__:
+        TUNNEL_VERAETIES = 4  # THATS HOW ITS WRITTEN IDC WHAT YOU SAY
+        SCORE_TIME_MULTIPLE = 10000
+        time_cycle = self.session["score"] % (TUNNEL_VERAETIES * SCORE_TIME_MULTIPLE)
+        if time_cycle <= SCORE_TIME_MULTIPLE:
+            change_time_grandually(self, "day")
+        elif time_cycle <= 2 * SCORE_TIME_MULTIPLE:
+            change_time_grandually(self, "night")
+        elif time_cycle <= 3 * SCORE_TIME_MULTIPLE:
+            change_time_grandually(self, "jungle")
+        elif time_cycle <= 4 * SCORE_TIME_MULTIPLE:
+            change_time_grandually(self, "dark")
+    # remodel_tunnels(self, self.tunnel_color)
 
     # This line uses slices to take the front of the list and put it on the back
     self.tunnel = self.tunnel[1:] + self.tunnel[0:1]
