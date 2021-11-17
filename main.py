@@ -4,6 +4,7 @@ from collision import *
 from tunnel import *
 import player
 import scan
+import queue
 from pandac.PandaModules import WindowProperties
 
 class Game(ShowBase):
@@ -19,6 +20,7 @@ class Game(ShowBase):
         self.title = OnscreenText(text="Haag", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dBottomRight, align=TextNode.ARight, pos=(-0.05, 0.05), scale=.08)
         self.hit_text = OnscreenText(text="Hits: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.09), scale=.08)
         self.highscore_text = OnscreenText(text="Highscore: 0", style=1, fg=(1, 1, 1, 1), shadow=(0, 0, 0, .5), parent=base.a2dTopLeft, align=TextNode.ALeft, pos=(0.008, -0.18), scale=.08)
+        self.lastscore_text = 0
 
         self.tunnel_color = 0
         self.tunnel_counter = 0
@@ -111,7 +113,7 @@ class Game(ShowBase):
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
                   OnscreenText(text="(White Circle => Good | Red Circle => Bad)", parent=self.gameMenu, scale=0.04, pos = (0,-0.39)),
-                  OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
+                  OnscreenText(text=f"High score: {int(self.high_score)}\t Score: {int(self.lastscore_text)}" , parent=self.gameMenu, scale=0.07, pos = (-0.1,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
 
     def start_tasks(self):
@@ -119,7 +121,7 @@ class Game(ShowBase):
         self.taskMgr.add(lambda task: spawner_timer(self, task), "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
-        self.background_music.play()
+        self.taskMgr.add(self.manage_music, "MusicTrackManager")
 
     def stop_tasks(self):
         self.tasks_running = False
@@ -128,7 +130,8 @@ class Game(ShowBase):
         self.taskMgr.remove("GameSpeedAcceleration")
         if not self.DEBUG:
             self.scanner.stop()
-        self.background_music.stop()
+        self.taskMgr.remove("MusicTrackManager")
+        self.current_playing_music.stop()
 
     def start_game(self):
         if "session" in dir(self):
@@ -156,10 +159,27 @@ class Game(ShowBase):
         self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
-        self.background_music = base.loader.loadSfx('assets/music/music.wav')
-        self.background_music.setLoop(True)
-        # self.playback_speed = 1
-
+        music_files = [os.path.join(MUSIC_FILES_PATH, file) for file in os.listdir(MUSIC_FILES_PATH) if os.path.isfile(os.path.join(MUSIC_FILES_PATH, file))]
+        print(music_files)
+        
+        self.music_queue = queue.Queue()
+        for file in music_files:
+            self.music_queue.put(base.loader.loadSfx(file))
+        
+        # For now, let's take the first track in the queue and just play it, although it's a bit dirty
+        self.current_playing_music = self.music_queue.get()
+        self.current_playing_music.setLoopCount(random.randint(2, 4))
+        self.current_playing_music.play()
+    
+    def manage_music(self, task):
+        if self.current_playing_music.status() == AudioSound.READY: # Checks if the sound track has ended
+            next_track = self.music_queue.get()
+            self.music_queue.put(self.current_playing_music)
+            next_track.setLoopCount(random.randint(2, 4))
+            self.current_playing_music = next_track
+            self.current_playing_music.play()
+        return Task.cont
+   
     def init_fog(self):
         self.fog = Fog('distanceFog')
         self.fog.setColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
@@ -221,12 +241,15 @@ class Game(ShowBase):
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
+            self.session["score"] += -self.session["game_speed"] * 20
             score_addr = -self.session["game_speed"] * 20
             if self.session["score_boost"]:
                 score_addr *= SCORE_BOOST_MULTIPLIER
             self.session["score"] += score_addr
-        self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
-        self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
+        
+        self.hit_text.text = f'Score: {int(self.session["score"])}'
+        self.highscore_text.text = f'Highscore: {int(self.high_score)}'
+        
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 
@@ -242,7 +265,7 @@ class Game(ShowBase):
             if self.session["playback_speed"] < MAX_BACKGROUND_MUSIC_SPEED:
                 self.session["playback_speed"] += 0.002
             # self.background_music.setPlayRate(self.playback_speed)
-            self.background_music.setPlayRate(self.session["playback_speed"])
+            self.current_playing_music.setPlayRate(self.session["playback_speed"])
             # self.birds_y_speed += BIRDS_X_ACCELERATION
             self.game_speed_timer.reset()
         return Task.cont
