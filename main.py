@@ -222,6 +222,10 @@ class Game(ShowBase):
             # self.birds_y_speed += BIRDS_X_ACCELERATION
             self.game_speed_timer.reset()
         return Task.cont
+
+    def scooter_boost(self, boost):
+        boost.model.reparentTo(self.ralph)
+        boost.model.setPos(0,0,0)
     
 game = Game()
 game.run()

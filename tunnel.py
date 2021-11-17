@@ -1,4 +1,5 @@
 from basefile import *
+from boosters import *
 
 TUNNELS_COUNT = 16
 
@@ -112,15 +113,17 @@ def spawn_box(self, lane):
 
 def spawn_prize(self, lane):
     prize = None
-    x = random.randint(0,2)
+    extra_scale_factor = 1
+    x = 3#random.randint(0,3)
     if  x == 0:
         prize = self.loader.loadModel("assets/models/objects/soccerBall.egg")
     elif x == 1:
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
-    #elif x == 3:
-    #    prize = self.loader.loadModel("assets/models/objects/MarioBox.obj")
+    elif x == 3:
+        spawn_boosters(self)
+        return
         """prize_light = AmbientLight('alight')
         prize_light.setColor((0.2, 0.2, 0.2, 1))
         plnp = prize.attachNewNode(prize_light)
@@ -131,7 +134,7 @@ def spawn_prize(self, lane):
         
     prize.reparentTo(render)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
-    prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
+    prize.setScale(prize, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor)
     col = prize.attachNewNode(CollisionNode('prize'))
     col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.7))
     if self.DEBUG:
@@ -139,6 +142,11 @@ def spawn_prize(self, lane):
     self.cTrav.addCollider(col, self.notifier)
 
     self.session["prizes"].append(prize)
+
+def spawn_boosters(self):
+    booster = Booster(self, "assets/models/objects/soccerBall.egg", self.scooter_boost)
+    #booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
+    booster.scale(0.1)
 
 def remove_obj(self, obj):
     obj.remove_node()
