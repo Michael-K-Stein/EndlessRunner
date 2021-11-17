@@ -64,7 +64,7 @@ class Game(ShowBase):
             "score_last_update_time": 0,
             "object_spawn_interval_seconds": STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
             "hearts_counter": 3,
-            "birds_x_speed": 0,
+            "game_speed": 0,
             "playback_speed": 1,
             "hearts_obj": [
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
@@ -119,7 +119,7 @@ class Game(ShowBase):
                 node.remove_node()
         self.create_game_session()
         self.gameMenu.hide()
-        self.session["birds_x_speed"] = (-BIRD_DEFAULT_SPEED * 10) if self.DEBUG else -BIRD_DEFAULT_SPEED 
+        self.session["game_speed"] = (-GAME_DEFAULT_SPEED * 1) if self.DEBUG else -GAME_DEFAULT_SPEED 
 
         for x in self.session["hearts_obj"]:
             x.setTransparency(1)
@@ -179,26 +179,26 @@ class Game(ShowBase):
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
-            box.setPos(box, -1, 0, 0)
+            box.setPos(box, self.session["game_speed"] / BOX_BASE_SCALE, 0, 0)
             if is_out_of_frame(self, box):
                 remove_obj(self, box)
 
         for bird in self.session["birds"]:
             #bird.setPos(bird, self.session["birds_x_speed"], 0, math.sin(bird.getZ()) / 10)#-0.1
-            bird.setPos(bird, 0, -self.session["birds_x_speed"] / 10, math.sin(bird.getZ()) / 40)#-0.1
+            bird.setPos(bird, 0, -self.session["game_speed"] / BIRD_BASE_SCALE, math.sin(bird.getZ()) / 40)#-0.1
             if is_out_of_frame(self, bird):
                 remove_obj(self, bird)
             #TODO - Michael: bird.setHpr(0, math.sin(bird.getZ()) / 5, 0)
         
         for prize in self.session["prizes"]:
-            prize.setPos(prize, 0, 0, -self.session["birds_x_speed"] / 10)
+            prize.setPos(prize, 0, 0, -self.session["game_speed"] / PRIZE_BASE_SCALE)
             if is_out_of_frame(self, prize) or prize_collision(self, prize):
                 remove_obj(self, prize)
 
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
-            self.session["score"] += -self.session["birds_x_speed"] * 0.2
+            self.session["score"] += -self.session["game_speed"] * 0.2
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
         self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
         if self.session["score"] > self.high_score:
@@ -208,8 +208,8 @@ class Game(ShowBase):
 
     def game_speed_acceleration(self, task):
         if (int(self.game_speed_timer.getRealTime()) + 1) % GAME_SPEED_ACCELERATION_INTERVAL_SECONDS == 0:
-            if self.session["birds_x_speed"] > -MAX_BIRDS_X_SPEED:
-                self.session["birds_x_speed"] += BIRDS_X_ACCELERATION
+            if self.session["game_speed"] > -MAX_GAME_SPEED:
+                self.session["game_speed"] += GAME_ACCELERATION
             if self.session["playback_speed"] < MAX_BACKGROUND_MUSIC_SPEED:
                 self.session["playback_speed"] += 0.002
             # self.background_music.setPlayRate(self.playback_speed)

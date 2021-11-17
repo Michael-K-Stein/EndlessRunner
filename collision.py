@@ -40,7 +40,7 @@ def player_hit(self):
         self.show_menu()
     self.session["hearts_counter"] -= 1
 
-    self.session["birds_x_speed"] = min(-BIRD_DEFAULT_SPEED, self.session["birds_x_speed"] // 2)
+    #self.session["game_speed"] = min(-GAME_DEFAULT_SPEED, self.session["game_speed"] // 2)
     self.session["object_spawn_interval_seconds"] = max(STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS,
             self.session["object_spawn_interval_seconds"] // 2)
     self.session["playback_speed"] = max(1, self.session["playback_speed"] - 0.1)

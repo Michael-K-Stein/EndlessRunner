@@ -100,7 +100,7 @@ def spawn_box(self, lane):
     box = self.loader.loadModel("assets/models/crate")
     box.reparentTo(render)
     box.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.7, OBSTACLE_SPWN_DEPTH)
-    box.setScale(.3)
+    box.setScale(BOX_BASE_SCALE)
     box.setHpr(90, 0, 90)
 
     col = box.attachNewNode(CollisionNode('box'))
@@ -119,6 +119,15 @@ def spawn_prize(self, lane):
         prize = self.loader.loadModel("assets/models/objects/basketball.egg")
     elif x == 2:
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
+    #elif x == 3:
+    #    prize = self.loader.loadModel("assets/models/objects/MarioBox.obj")
+        """prize_light = AmbientLight('alight')
+        prize_light.setColor((0.2, 0.2, 0.2, 1))
+        plnp = prize.attachNewNode(prize_light)
+        prize.setLight(plnp)
+        prize.showTightBounds()
+        prize.setScale(0.003, 0.003, 0.003)
+        prize.setHpr(0, 0, 45)"""
         
     prize.reparentTo(render)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
