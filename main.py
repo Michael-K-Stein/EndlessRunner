@@ -73,6 +73,7 @@ class Game(ShowBase):
             "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
+            "score_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
@@ -218,7 +219,10 @@ class Game(ShowBase):
         self.session["time"] += globalClock.getDt()
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
-            self.session["score"] += -self.session["game_speed"] * 20
+            score_addr = -self.session["game_speed"] * 20
+            if self.session["score_boost"]:
+                score_addr *= SCORE_BOOST_MULTIPLIER
+            self.session["score"] += score_addr
         self.hit_text.text = 'Score: ' + str(int(self.session["score"]))
         self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
         if self.session["score"] > self.high_score:
@@ -257,6 +261,17 @@ class Game(ShowBase):
         self.session["game_speed"] /= SPEED_BOOST_MULTIPLIER
         boost.real_model.remove_node()
         self.session["speed_boost"] = False
+
+    def dragon_boost(self, boost):
+        boost.real_model.reparentTo(self.ralph)
+        boost.real_model.setPos(0,0,5)
+        boost.real_model.setH(45)
+        boost.real_model.setScale(0.1)
+        self.session["score_boost"] = True
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
+    def stop_dragon_boost(self, boost, task):
+        boost.real_model.remove_node()
+        self.session["score_boost"] = False
 
     def start_immune(self, durration):
         self.session["player_immune"] = True
