@@ -51,12 +51,7 @@ def player_hit(self):
             self.session["object_spawn_interval_seconds"] // 2)
     self.session["playback_speed"] = max(1, self.session["playback_speed"] - 0.1)
 
-    # for node in self.session["birds"] + self.session["boxes"]:
-    #     remove_obj(self, node)
-    #self.hit_text.text = 'Hits: ' + str(self.hit)
-
-    self.session["player_immune"] = True
-    self.session["player_immune_start"] = self.session["time"]
+    self.start_immune(3)
 
 def prize_collision(self, prize):
     if prize.getZ() >= self.ralph.getZ():

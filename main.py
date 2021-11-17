@@ -79,7 +79,8 @@ class Game(ShowBase):
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.23, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
                  OnscreenImage(image='assets/images/heart.png', pos=(-0.08, 0, -0.08), scale=0.08, parent=base.a2dTopRight)],
             "player_immune": False,
-            "player_immune_start": 0
+            "player_immune_start": 0,
+            "immune_duration": 3
         }
 
     def register_keys(self):
@@ -220,12 +221,7 @@ class Game(ShowBase):
             self.high_score = self.session["score"]
 
         if self.session["player_immune"]:
-            if self.session["time"] - self.session["player_immune_start"] > 3:
-                self.session["player_immune"] = False
-
             self.ralph.setAlphaScale(0.35 + math.sin(self.session["time"] * 10)/2)
-        else:
-            self.ralph.setAlphaScale(0.35)
 
         return Task.cont
 
@@ -247,11 +243,20 @@ class Game(ShowBase):
         self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
         #self.session["tmp_accelerate"] = self.getRealTime() + 5
 
+        self.start_immune(5)
+
         myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_scooter_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
 
     def stop_scooter_boost(self, boost, task):
         self.session["game_speed"] /= SPEED_BOOST_MULTIPLIER
         boost.real_model.remove_node()
+
+    def start_immune(self, durration):
+        self.session["player_immune"] = True
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_immune, 'stop_immune')
+    def stop_immune(self, task):
+        self.session["player_immune"] = False
+        self.ralph.setAlphaScale(0.35)
     
 game = Game()
 game.run()
