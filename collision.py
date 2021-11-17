@@ -1,6 +1,9 @@
 from basefile import *
 from tunnel import *
 
+def handle_prize_collision(self, entry):
+    self.session["score"] += PRIZE_REWARD
+
 def init_collision_detection(self):
     self.cTrav = CollisionTraverser()
 
@@ -11,22 +14,21 @@ def init_collision_detection(self):
 
     self.notifier.addInPattern('%fn-into-%in')
     self.notifier.addAgainPattern('%fn-again-%in')
-
+    
     def handle_collision(entry):
         player_hit(self)
 
-    def handle_prize_collision(entry):
-        self.session["score"] += PRIZE_REWARD
-    
     # magic. Do not touch!
     self.accept('box-into-ralph', handle_collision)
     self.accept('ralph-into-box', handle_collision)
     self.accept('ralph-into-bird', handle_collision)
     self.accept('bird-into-ralph', handle_collision)
-    self.accept('prize-into-ralph', handle_prize_collision)
-    self.accept('ralph-into-prize', handle_prize_collision)
+    #self.accept('prize-into-ralph', handle_prize_collision)
+    #self.accept('ralph-into-prize', handle_prize_collision)
 
 def player_hit(self):
+    self.hit_soundeffect.play()
+    
     self.session["hit"] += 1
     if self.DEBUG:
         print(self.session["hit"])
@@ -51,7 +53,9 @@ def prize_collision(self, prize):
     if prize.getZ() >= self.ralph.getZ(): 
         if self.ralph.getX() == 0:
             if self.ralph.getY() < 0:
+                handle_prize_collision(self, None)
                 remove_obj(self, prize)
+                self.prize_soundeffect.play()
 
 def is_out_of_frame(self, obj):
     if obj not in self.session["prizes"]:

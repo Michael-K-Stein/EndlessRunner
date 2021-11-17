@@ -126,12 +126,17 @@ class Game(ShowBase):
 
         self.start_tasks()
         self.init_music()
+        self.init_soundeffects()
         self.session["playback_speed"] = 1
         self.session["hit"] = 0
 
     def quit_game(self):
         self.scanner.stop()
         sys.exit(0)
+    
+    def init_soundeffects(self):
+        self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
         self.background_music = base.loader.loadSfx('assets/music/music.wav')
@@ -198,10 +203,6 @@ class Game(ShowBase):
         self.highscore_text.text = 'Highscore: ' + str(int(self.high_score))
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
-
-        # if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
-        #     self.session["last_tunnel_remodel_time"] = self.session["time"]
-        #     remodel_tunnels(self)
 
         return Task.cont
 
