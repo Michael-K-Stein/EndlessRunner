@@ -155,8 +155,9 @@ class Game(ShowBase):
         sys.exit(0)
 
     def init_soundeffects(self):
-        self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
-        self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
+        self.hit_soundeffect     = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.prize_soundeffect   = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
+        self.scooter_soundeffect = base.loader.loadSfx('assets/soundeffects/scooter.mp3')
 
     def init_music(self):
         music_files = [os.path.join(MUSIC_FILES_PATH, file) for file in os.listdir(MUSIC_FILES_PATH) if os.path.isfile(os.path.join(MUSIC_FILES_PATH, file))]
@@ -272,10 +273,12 @@ class Game(ShowBase):
 
     def scooter_boost(self, boost):
         if not self.session["speed_boost"]:
-            boost.real_model.reparentTo(self.ralph)
-            boost.real_model.setPos(0,0,0)
-            self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
-            self.session["speed_boost"] = True
+            if self.scooter_soundeffect.status() != AudioSound.PLAYING:
+                boost.real_model.reparentTo(self.ralph)
+                boost.real_model.setPos(0,0,0)
+                self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
+                self.session["speed_boost"] = True
+                self.scooter_soundeffect.play()
             #self.session["tmp_accelerate"] = self.getRealTime() + 5
 
             self.start_immune(5)
