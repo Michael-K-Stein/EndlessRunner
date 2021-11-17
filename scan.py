@@ -1,7 +1,7 @@
 from basefile import *
 
 DEFAULT_HEIGHT = 175
-DEFAULT_JUMP_THRESH = 20
+DEFAULT_JUMP_THRESH = 15
 DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
 DEFAULT_CALIB_LEFTRIGHT = 65
@@ -32,7 +32,7 @@ class Scanner:
         self.cur_points = None
         self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
         self.is_calibrating = True
-        self.time_elapsed_calibration = time.localtime().tm_sec - 3
+        self.time_elapsed_calibration = time.localtime().tm_sec + 3
         self.person_x = 0
         self.person_y = 0
         self.person_height = 0
@@ -60,8 +60,10 @@ class Scanner:
             self.person_height = self.cur_points[BODY_PARTS["LAnkle"]][1] - self.cur_points[BODY_PARTS["Neck"]][1]
         except TypeError:
             self.callback("CAMERA")
-            self.is_centered = False
-
+            self.time_elapsed_calibration = time.localtime().tm_sec
+            return False
+        return True
+    
     def find_center_of_person(self):
         sum_x, sum_y, count = 0, 0, 0
         cur_point = 0
@@ -85,7 +87,8 @@ class Scanner:
 
 
     def calibrate(self):
-        self.find_height_of_person()
+        if not self.find_height_of_person():
+            return False
         #adjusting thresholds
         self.scale = self.person_height / DEFAULT_HEIGHT
         self.jump_thresh = DEFAULT_JUMP_THRESH * self.scale
@@ -97,6 +100,8 @@ class Scanner:
 
         action = "CALIBRATED"
         self.callback(action)
+
+        return True
 
     def test_for_action(self):
         action = None
@@ -206,8 +211,7 @@ class Scanner:
                 frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
                 if self.is_centered():
                     if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:  
-                        self.is_calibrating = False
-                        self.calibrate()
+                        self.is_calibrating = not self.calibrate()
                 else:
                     self.time_elapsed_calibration = time.localtime().tm_sec
             self.test_for_action()

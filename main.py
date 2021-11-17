@@ -78,7 +78,8 @@ class Game(ShowBase):
         self.accept("space", self.player.start_jump)
         self.accept("lshift", tuck, [self])
         self.accept("rshift", tucknt, [self])
-        self.accept("r", self.quit_game)
+        for exit_key in ['r', 'esc']:
+            self.accept(exit_key, self.quit_game)
         self.accept("p", self.scanner_callback, ["JUMP"])
         self.accept("l", self.show_menu)
 
@@ -92,15 +93,9 @@ class Game(ShowBase):
         # OnscreenText(text="Jump To Start...", parent=self.gameMenu, scale=0.1, pos = (0,-0.2))
         self.labels = [OnscreenText(text="Keep camera aligned with the ceiling", fg=(0,0,0,255), bg=(255,255,255,255), parent=self.gameMenu, scale=0.08, pos = (0,-0.19)),
                   OnscreenText(text="Wait for calibration...", parent=self.gameMenu, scale=0.07, pos = (0,-0.29)),
+                  OnscreenText(text="(White Circle => Good | Red Circle => Bad)", parent=self.gameMenu, scale=0.04, pos = (0,-0.39)),
                   OnscreenText(text="High score: " + str(int(self.high_score)), parent=self.gameMenu, scale=0.07, pos = (0,-0.50))]
         OnscreenImage(parent=self.gameMenu, image = 'assets/models/title2.PNG', pos = (0,0,0.3), scale=0.3)
-
-        if self.DEBUG:
-            DirectButton(text = "DEBUG MODE",
-                    command = None,
-                    pos = (0, 0, -0.4),
-                    parent = self.gameMenu,
-                    scale = 0.07)
 
     def start_tasks(self):
         self.tasks_running = True
@@ -166,13 +161,16 @@ class Game(ShowBase):
             rotate(self, 1)
             tucknt(self)
         elif action == "CALIBRATED":
-            self.labels[0].setText("Jump to start...")
-            self.labels[0].setPos(0,-0.2)
-            self.labels[0].setScale(0.1)
-            self.labels[1].setText("")
+            if "labels" in dir(self):
+                self.labels[0].setText("Jump to start...")
+                self.labels[0].setPos(0,-0.2)
+                self.labels[0].setScale(0.1)
+                self.labels[1].setText("")
         elif action == "CAMERA":
-            self.labels[0].setText("Camera can't fully see you")
-            
+            if "labels" in dir(self):
+                self.labels[0].setText("Camera can't fully see you")
+
+
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
