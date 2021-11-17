@@ -337,9 +337,10 @@ class Game(ShowBase):
         elif y == 2:
             self.session["score"] *= 2
     def heart_boost(self, boost):
-        if self.session["hearts_counter"] < 3:
-            self.session["hearts_obj"][self.session["hearts_counter"] + 1].setImage('assets/images/heart.png')
-            self.session["hearts_obj"][self.session["hearts_counter"] + 1].setTransparency(1)
+        if self.session["hearts_counter"] < 5:
+            print("Added hearts!")
+            self.session["hearts_obj"][self.session["hearts_counter"]].setImage('assets/images/heart.png')
+            self.session["hearts_obj"][self.session["hearts_counter"]].setTransparency(1)
             self.session["hearts_counter"] += 1
     def bomb_birds(self, task):
         for x in range(3):
