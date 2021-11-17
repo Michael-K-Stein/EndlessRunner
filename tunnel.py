@@ -121,7 +121,6 @@ def spawn_prize(self, lane):
         prize = self.loader.loadModel("assets/models/objects/toyball2.egg")
         
     prize.reparentTo(render)
-    #prize.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -1.3, OBSTACLE_SPWN_DEPTH)
     prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
     prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
     col = prize.attachNewNode(CollisionNode('prize'))

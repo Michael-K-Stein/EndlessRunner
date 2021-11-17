@@ -199,10 +199,6 @@ class Game(ShowBase):
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 
-        # if self.session["last_tunnel_remodel_time"] + 5 < self.session["time"]:
-        #     self.session["last_tunnel_remodel_time"] = self.session["time"]
-        #     remodel_tunnels(self)
-
         return Task.cont
 
     def game_speed_acceleration(self, task):
