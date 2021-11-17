@@ -187,7 +187,7 @@ class Game(ShowBase):
         
         for prize in self.session["prizes"]:
             prize.setPos(prize, 0, 0, -self.session["birds_x_speed"] / 10)
-            if is_out_of_frame(self, prize):
+            if is_out_of_frame(self, prize) or prize_collision(self, prize):
                 remove_obj(self, prize)
 
         self.session["time"] += globalClock.getDt()

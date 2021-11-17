@@ -59,12 +59,6 @@ def cont_tunnel(self):
 def add_tunnel_props(self, tunnel):
     pipe = self.loader.loadModel("assets\\models\\tunnel_varients\\RustPipe.obj")
     pipe.reparentTo(tunnel)
-    """plight = PointLight('plight')
-    plight.setColor((1, 1, 1, 1))
-    plnp = pipe.attachNewNode(plight)
-    plnp.setPos(0, 0, 0)
-    pipe.setLight(plnp)
-    """
     alight = AmbientLight('alight')
     alight.setColor((1, 1, 1, 1))
     alnp = pipe.attachNewNode(alight)
@@ -78,7 +72,7 @@ def spawner_timer(self, task):
             else:
                 spawner(self, ObsticleType.BOX, random.randint(0, 2))
         self.bird_spawner_timer.reset()
-    if random.randint(0,1000) == 7:
+    if random.randint(0,PRIZE_CHANCE) == 7:
         spawn_prize(self, random.randint(0, 2))
     return Task.cont
 
