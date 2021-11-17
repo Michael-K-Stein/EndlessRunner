@@ -78,6 +78,13 @@ def add_tunnel_props(self, tunnel):
         switch.setHpr(90, 180, 90)
         switch.reparentTo(tunnel)
 
+    if random.randint(0, 10) == 1:
+        skeleton = self.loader.loadModel("assets/models/tunnel_varients/Skeleton/Skeleton")
+        # skeleton.setScale(3)
+        skeleton.setPos(9,0,3)
+        skeleton.setHpr(70, 0, 90)
+        skeleton.reparentTo(tunnel)
+
 def spawner_timer(self, task):
     if (int(self.bird_spawner_timer.getRealTime()) + 1) % self.session['object_spawn_interval_seconds'] == 0:
         for _ in range(random.randint(1, 3)):
