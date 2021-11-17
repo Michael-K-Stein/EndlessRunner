@@ -242,18 +242,21 @@ class Game(ShowBase):
         return Task.cont
 
     def scooter_boost(self, boost):
-        boost.real_model.reparentTo(self.ralph)
-        boost.real_model.setPos(0,0,0)
-        self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
-        #self.session["tmp_accelerate"] = self.getRealTime() + 5
+        if not self.session["speed_boost"]:
+            boost.real_model.reparentTo(self.ralph)
+            boost.real_model.setPos(0,0,0)
+            self.session["game_speed"] = SPEED_BOOST_MULTIPLIER*self.session["game_speed"]
+            self.session["speed_boost"] = True
+            #self.session["tmp_accelerate"] = self.getRealTime() + 5
 
-        self.start_immune(5)
+            self.start_immune(5)
 
-        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_scooter_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
+            myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_scooter_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
 
     def stop_scooter_boost(self, boost, task):
         self.session["game_speed"] /= SPEED_BOOST_MULTIPLIER
         boost.real_model.remove_node()
+        self.session["speed_boost"] = False
 
     def start_immune(self, durration):
         self.session["player_immune"] = True
