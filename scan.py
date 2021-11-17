@@ -4,7 +4,7 @@ DEFAULT_HEIGHT = 175
 DEFAULT_JUMP_THRESH = 15
 DEFAULT_CROUCH_THRESH = 30
 DEFAULT_LEFT_RIGHT_THRESH = 30
-DEFAULT_CALIB_LEFTRIGHT = 65
+DEFAULT_CALIB_LEFTRIGHT = 40
 DEFAULT_CALIB_HEIGHT = 300
 
 BODY_PARTS = { "Nose": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
@@ -30,7 +30,7 @@ class Scanner:
         self.last_action = ""
         self.is_running = True
         self.cur_points = None
-        self.overlay = cv2.resize(cv2.imread('Outline-body.png'), (720, 480))
+        self.overlay = cv2.resize(cv2.imread('./assets/images/outline_body.png'), (720, 480))
         self.is_calibrating = True
         self.time_elapsed_calibration = time.localtime().tm_sec + 3
         self.person_x = 0
@@ -103,31 +103,36 @@ class Scanner:
 
         return True
 
+    def get_person_lane(self):
+        if self.person_x > self.frame_center_x + self.left_right_thresh:
+            return "RIGHT"
+        elif self.person_x < self.frame_center_x - self.left_right_thresh:
+            return "LEFT"
+        else:
+            return "CENTER"
+    
     def test_for_action(self):
         action = None
         if self.is_calibrating:
             return
         if self.frame_center_y - self.person_y > self.jump_thresh:
             action = "JUMP"
-        elif self.person_y - self.frame_center_y  >  self.crouch_thresh:
-            action = "TOOK"
-        elif self.person_x > self.frame_center_x + self.left_right_thresh:
-            action = "RIGHT"
-        elif self.person_x < self.frame_center_x - self.left_right_thresh:
-            action = "LEFT"
+        elif self.person_y - self.frame_center_y > self.crouch_thresh:
+            action = self.get_person_lane() + "_TOOK"
         else:
-            action = "CENTER"
+            action = self.get_person_lane()
 
         if action is not None:
             if self.last_action != action:
                 self.last_action = action
-                self.callback(action)
+                for callback_action in action.split("_"):
+                    self.callback(callback_action)
                 print(action)
 
     def is_centered(self):
-        frame_x, frame_y, _ = self.frame.shape
-        frame_x //= 2
-        frame_y //= 2
+        frame_y, frame_x , _ = self.frame.shape
+        frame_x //= 4
+        frame_y //= 4
         res = abs(self.person_x - frame_x) < DEFAULT_CALIB_LEFTRIGHT and\
             abs(self.person_y - frame_y) < DEFAULT_CALIB_HEIGHT
         return res
@@ -142,12 +147,15 @@ class Scanner:
             ret, frame = self._cap.read()
             frame=cv2.flip(frame, 1)
             # resizing for faster detection
-            frame = cv2.resize(frame, (360, 240))
-            
-            #start of openpose:
-            net.setInput(cv2.dnn.blobFromImage(frame, 1.0, (360, 240), (127.5, 127.5, 127.5), swapRB=True, crop=False))
-            out = net.forward()
-            out = out[:, :19, :, :] 
+            try:
+                frame = cv2.resize(frame, (360, 240))
+                
+                #start of openpose:
+                net.setInput(cv2.dnn.blobFromImage(frame, 1.0, (360, 240), (127.5, 127.5, 127.5), swapRB=True, crop=False))
+                out = net.forward()
+                out = out[:, :19, :, :] 
+            except cv2.error:
+                continue
 
             assert(len(BODY_PARTS) == out.shape[1])
 
@@ -166,6 +174,11 @@ class Scanner:
                 points.append((int(x), int(y)) if conf > threshold else None)
 
 
+            if self.is_centered() and self.is_calibrating:
+                color = (255, 255, 255)
+            else:
+                color = (0, 0, 255)
+                
             for pair in POSE_PAIRS:
                 partFrom = pair[0]
                 partTo = pair[1]
@@ -177,42 +190,38 @@ class Scanner:
 
                 if points[idFrom] and points[idTo]:
                     cv2.line(frame, points[idFrom], points[idTo], (0, 255, 0), 3)
-                    cv2.ellipse(frame, points[idFrom], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
-                    cv2.ellipse(frame, points[idTo], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+                    cv2.ellipse(frame, points[idFrom], (3, 3), 0, 0, 360, color, cv2.FILLED)
+                    cv2.ellipse(frame, points[idTo], (3, 3), 0, 0, 360, color, cv2.FILLED)
             self.cur_points = points
             self.find_center_of_person()
         
             t, _ = net.getPerfProfile()
-            if self.is_centered():
-                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            else:
-                cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, (0, 0, 255), cv2.FILLED)
+            cv2.ellipse(frame, (self.person_x, self.person_y), (5, 5), 0, 0, 360, color, cv2.FILLED)
             
-            #cv2.ellipse(frame, (int(self.frame_center_x + self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            #cv2.ellipse(frame, (int(self.frame_center_x - self.left_right_thresh),10), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
-            #cv2.ellipse(frame, (10, int(self.frame_center_y + self.jump_thresh)), (3, 3), 0, 0, 360, (255, 255, 255), cv2.FILLED)
+            frame_y,frame_x , _ = frame.shape
+            
 
             #right thresh
-            cv2.line(frame, (int(self.frame_center_x + self.left_right_thresh),50),\
-             (int(self.frame_center_x + self.left_right_thresh),250), (255,255,255), 3)
+            cv2.line(frame, (int(self.frame_center_x + self.left_right_thresh),0),\
+             (int(self.frame_center_x + self.left_right_thresh),300), (255,255,255), 3)
             #left thresh
-            cv2.line(frame, (int(self.frame_center_x - self.left_right_thresh),50),\
-             (int(self.frame_center_x - self.left_right_thresh),250), (255,255,255), 3)
+            cv2.line(frame, (int(self.frame_center_x - self.left_right_thresh),0),\
+             (int(self.frame_center_x - self.left_right_thresh),300), (255,255,255), 3)
             #jump thresh
-            cv2.line(frame, (50, int(self.frame_center_y - self.jump_thresh)),\
-             (250,int(self.frame_center_y - self.jump_thresh)), (255,255,255), 3)
+            cv2.line(frame, (0, int(self.frame_center_y - self.jump_thresh)),\
+             (400,int(self.frame_center_y - self.jump_thresh)), (255,255,255), 3)
             #crouch thresh
     
-            cv2.line(frame, (50, int(self.frame_center_y + self.crouch_thresh)),\
-             (250,int(self.frame_center_y + self.crouch_thresh)), (255,255,255), 3)
+            cv2.line(frame, (0, int(self.frame_center_y + self.crouch_thresh)),\
+             (400,int(self.frame_center_y + self.crouch_thresh)), (255,255,255), 3)
 
             frame = cv2.resize(frame, (720, 480))
             self.frame = frame
 
             if self.is_calibrating:
-                frame = cv2.addWeighted(frame,0.6,self.overlay,0.1,0)
+                frame = cv2.addWeighted(frame,0.6,self.overlay,0.9,1)
                 if self.is_centered():
-                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:  
+                    if time.localtime().tm_sec - self.time_elapsed_calibration >= 5:
                         self.is_calibrating = not self.calibrate()
                 else:
                     self.time_elapsed_calibration = time.localtime().tm_sec

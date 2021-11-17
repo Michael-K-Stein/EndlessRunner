@@ -4,6 +4,9 @@ from tunnel import *
 def handle_prize_collision(self, entry):
     self.session["score"] += PRIZE_REWARD
 
+def handle_boost_collision(self, boost):
+    boost.collide()
+
 def init_collision_detection(self):
     self.cTrav = CollisionTraverser()
 
@@ -14,7 +17,7 @@ def init_collision_detection(self):
 
     self.notifier.addInPattern('%fn-into-%in')
     self.notifier.addAgainPattern('%fn-again-%in')
-    
+
     def handle_collision(entry):
         player_hit(self)
 
@@ -27,8 +30,11 @@ def init_collision_detection(self):
     #self.accept('ralph-into-prize', handle_prize_collision)
 
 def player_hit(self):
+    if self.session["player_immune"]:
+        return
+
     self.hit_soundeffect.play()
-    
+
     self.session["hit"] += 1
     if self.DEBUG:
         print(self.session["hit"])
@@ -45,16 +51,31 @@ def player_hit(self):
             self.session["object_spawn_interval_seconds"] // 2)
     self.session["playback_speed"] = max(1, self.session["playback_speed"] - 0.1)
 
-    for node in self.session["birds"] + self.session["boxes"]:
-        remove_obj(self, node)
-    #self.hit_text.text = 'Hits: ' + str(self.hit)
+    self.start_immune(3)
 
 def prize_collision(self, prize):
+<<<<<<< HEAD
     if self.ralph.getX() == prize.getX() \
             and math.ceil(prize.getZ()) == math.ceil(self.ralph.getZ()): # Dirty collision check
         handle_prize_collision(self, None)
         remove_obj(self, prize)
         self.prize_soundeffect.play()
+=======
+    if prize.getZ() >= self.ralph.getZ():
+        if self.ralph.getX() == 0:
+            if self.ralph.getY() < 0:
+                handle_prize_collision(self, None)
+                remove_obj(self, prize)
+                self.prize_soundeffect.play()
+>>>>>>> e2b6866ef8853e719b2d58f589f15964b97150ca
+
+def boost_collision(self, boost):
+    if boost.model.getZ() >= self.ralph.getZ(): 
+        if self.ralph.getX() == 0:
+            if self.ralph.getY() < 0:
+                handle_boost_collision(self, boost)
+                remove_obj(self, boost)
+                self.prize_soundeffect.play()
 
 def is_out_of_frame(self, obj):
     if obj not in self.session["prizes"]:
