@@ -22,6 +22,7 @@ from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 from panda3d.core import TransparencyAttrib
+from panda3d.core import AudioSound
 import random
 import math
 import sys
@@ -30,6 +31,8 @@ import numpy as np
 import cv2
 import threading
 import time
+import os
+
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
@@ -72,6 +75,8 @@ STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS = 3
 PRIZE_REWARD = 777
 PRIZE_BASE_SCALE = 0.3
 PRIZE_CHANCE = 700
+
+MUSIC_FILES_PATH = 'assets/music/'
 
 FOG_LUMINECENSE = 0.2
 
