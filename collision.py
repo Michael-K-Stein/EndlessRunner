@@ -27,6 +27,8 @@ def init_collision_detection(self):
     self.accept('ralph-into-prize', handle_prize_collision)
 
 def player_hit(self):
+    self.hit_soundeffect.play()
+    
     self.session["hit"] += 1
     if self.DEBUG:
         print(self.session["hit"])

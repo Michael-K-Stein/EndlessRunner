@@ -126,12 +126,16 @@ class Game(ShowBase):
 
         self.start_tasks()
         self.init_music()
+        self.init_soundeffects()
         self.session["playback_speed"] = 1
         self.session["hit"] = 0
 
     def quit_game(self):
         self.scanner.stop()
         sys.exit(0)
+    
+    def init_soundeffects(self):
+        self.hit_soundeffect = base.loader.loadSfx('assets/soundeffects/hit.mp3')
 
     def init_music(self):
         self.background_music = base.loader.loadSfx('assets/music/music.wav')
