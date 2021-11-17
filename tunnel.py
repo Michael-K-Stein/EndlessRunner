@@ -60,6 +60,7 @@ def cont_tunnel(self):
                 self.session["tunnel_type"] = NIGHT_TUNNEL_TYPE
             else:
                 self.session["tunnel_type"] = random.choice(TUNNEL_TYPES)
+            # CHANGE MUSIC HERE into file f"music_{self.session['tunnel_type']"
         change_type_grandually(self, self.session["tunnel_type"])
     # remodel_tunnels(self, self.tunnel_color)
 
