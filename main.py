@@ -126,12 +126,17 @@ class Game(ShowBase):
 
         self.start_tasks()
         self.init_music()
+        self.init_soundeffects()
         self.session["playback_speed"] = 1
         self.session["hit"] = 0
 
     def quit_game(self):
         self.scanner.stop()
         sys.exit(0)
+    
+    def init_soundeffects(self):
+        self.hit_soundeffect   = base.loader.loadSfx('assets/soundeffects/hit.mp3')
+        self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
         self.background_music = base.loader.loadSfx('assets/music/music.wav')
@@ -174,7 +179,7 @@ class Game(ShowBase):
     def game_loop(self, task):
         self.player.update(self, globalClock.getDt())
         for box in self.session["boxes"]:
-            box.setPos(box, self.session["birds_x_speed"] // 35, 0, 0)
+            box.setPos(box, -1, 0, 0)
             if is_out_of_frame(self, box):
                 remove_obj(self, box)
 
