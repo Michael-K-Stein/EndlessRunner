@@ -142,7 +142,7 @@ def spawner(self, type, lane):
 def spawn_bird(self, lane):
     bird = self.loader.loadModel("assets/models/bluebird/bluebird")
     bird.reparentTo(render)
-    bird.setPos(((lane-1)*MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH-2)
+    bird.setPos(((lane - 1) * MAGIC_POINT_THIRTY_FIVE), -0.10, OBSTACLE_SPWN_DEPTH-2)
     bird.setScale(BIRD_BASE_SCALE)
     bird.setHpr(90, 90, 90)
 
@@ -180,6 +180,7 @@ def spawn_prize(self, lane):
     elif x == 3:
         spawn_boosters(self)
         return
+
         """prize_light = AmbientLight('alight')
         prize_light.setColor((0.2, 0.2, 0.2, 1))
         plnp = prize.attachNewNode(prize_light)
@@ -190,8 +191,8 @@ def spawn_prize(self, lane):
 
 
     prize.reparentTo(render)
-    prize.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
-    prize.setScale(prize, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor, PRIZE_BASE_SCALE * extra_scale_factor)
+    prize.setPos(((lane - 1) * 0.7), -0.7, OBSTACLE_SPWN_DEPTH)
+    prize.setScale(PRIZE_BASE_SCALE, PRIZE_BASE_SCALE, PRIZE_BASE_SCALE)
     col = prize.attachNewNode(CollisionNode('prize'))
     col.node().addSolid(CollisionSphere(Point3(0,0,0), 0.7))
     if self.DEBUG:
@@ -201,12 +202,21 @@ def spawn_prize(self, lane):
     self.session["prizes"].append(prize)
 
 def spawn_boosters(self):
-    booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
-    booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
-    booster.model.setHpr(0,-90,0)
-    booster.scale(0.1)
-    booster.model.reparentTo(render)
-    self.session["boosters"].append(booster)
+    x = random.randint(0,1)
+    if x == 0:
+        booster = Booster(self, "assets/models/objects/scooter/Scooter2.egg", self.scooter_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.1)
+        booster.model.reparentTo(render)
+        self.session["boosters"].append(booster)
+    elif x == 1:
+        booster = Booster(self, "assets/models/objects/dragon3.egg", self.dragon_boost)
+        booster.model.setPos(0, -0.7, OBSTACLE_SPWN_DEPTH)
+        booster.model.setHpr(0,-90,0)
+        booster.scale(0.1/14)
+        booster.model.reparentTo(render)
+        self.session["boosters"].append(booster)
 
 def remove_obj(self, obj):
     if type(obj) is not Booster:

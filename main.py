@@ -4,6 +4,7 @@ from collision import *
 from tunnel import *
 import player
 import scan
+import queue
 from pandac.PandaModules import WindowProperties
 
 class Game(ShowBase):
@@ -74,6 +75,7 @@ class Game(ShowBase):
             "game_speed": GAME_DEFAULT_SPEED,
             "tmp_accelerate": 0,
             "speed_boost": False,
+            "score_boost": False,
             "playback_speed": 1,
             "hearts_obj": [
                 OnscreenImage(image='assets/images/heart.png', pos=(-0.38, 0, -0.08), scale=0.08, parent=base.a2dTopRight),
@@ -118,7 +120,7 @@ class Game(ShowBase):
         self.taskMgr.add(lambda task: spawner_timer(self, task), "Spawner")
         self.taskMgr.add(self.game_loop, "GameLoop")
         self.taskMgr.add(self.game_speed_acceleration, "GameSpeedAcceleration")
-        self.background_music.play()
+        self.taskMgr.add(self.manage_music, "MusicTrackManager")
 
     def stop_tasks(self):
         self.tasks_running = False
@@ -127,7 +129,8 @@ class Game(ShowBase):
         self.taskMgr.remove("GameSpeedAcceleration")
         if not self.DEBUG:
             self.scanner.stop()
-        self.background_music.stop()
+        self.taskMgr.remove("MusicTrackManager")
+        self.current_playing_music.stop()
 
     def start_game(self):
         if "session" in dir(self):
@@ -146,7 +149,8 @@ class Game(ShowBase):
         self.session["hit"] = 0
 
     def quit_game(self):
-        self.scanner.stop()
+        if not self.DEBUG:
+            self.scanner.stop()
         sys.exit(0)
 
     def init_soundeffects(self):
@@ -154,10 +158,27 @@ class Game(ShowBase):
         self.prize_soundeffect = base.loader.loadSfx('assets/soundeffects/prize_soundeffect.mp3')
 
     def init_music(self):
-        self.background_music = base.loader.loadSfx('assets/music/music.wav')
-        self.background_music.setLoop(True)
-        # self.playback_speed = 1
-
+        music_files = [os.path.join(MUSIC_FILES_PATH, file) for file in os.listdir(MUSIC_FILES_PATH) if os.path.isfile(os.path.join(MUSIC_FILES_PATH, file))]
+        print(music_files)
+        
+        self.music_queue = queue.Queue()
+        for file in music_files:
+            self.music_queue.put(base.loader.loadSfx(file))
+        
+        # For now, let's take the first track in the queue and just play it, although it's a bit dirty
+        self.current_playing_music = self.music_queue.get()
+        self.current_playing_music.setLoopCount(random.randint(2, 4))
+        self.current_playing_music.play()
+    
+    def manage_music(self, task):
+        if self.current_playing_music.status() == AudioSound.READY: # Checks if the sound track has ended
+            next_track = self.music_queue.get()
+            self.music_queue.put(self.current_playing_music)
+            next_track.setLoopCount(random.randint(2, 4))
+            self.current_playing_music = next_track
+            self.current_playing_music.play()
+        return Task.cont
+   
     def init_fog(self):
         self.fog = Fog('distanceFog')
         self.fog.setColor(FOG_LUMINECENSE, FOG_LUMINECENSE, FOG_LUMINECENSE)
@@ -220,8 +241,14 @@ class Game(ShowBase):
         if self.session["time"] > self.session["score_last_update_time"] + 0.2:
             self.session["score_last_update_time"] = self.session["time"]
             self.session["score"] += -self.session["game_speed"] * 20
+            score_addr = -self.session["game_speed"] * 20
+            if self.session["score_boost"]:
+                score_addr *= SCORE_BOOST_MULTIPLIER
+            self.session["score"] += score_addr
+        
         self.hit_text.text = f'Score: {int(self.session["score"])}'
         self.highscore_text.text = f'Highscore: {int(self.high_score)}'
+        
         if self.session["score"] > self.high_score:
             self.high_score = self.session["score"]
 
@@ -237,7 +264,7 @@ class Game(ShowBase):
             if self.session["playback_speed"] < MAX_BACKGROUND_MUSIC_SPEED:
                 self.session["playback_speed"] += 0.002
             # self.background_music.setPlayRate(self.playback_speed)
-            self.background_music.setPlayRate(self.session["playback_speed"])
+            self.current_playing_music.setPlayRate(self.session["playback_speed"])
             # self.birds_y_speed += BIRDS_X_ACCELERATION
             self.game_speed_timer.reset()
         return Task.cont
@@ -258,6 +285,17 @@ class Game(ShowBase):
         self.session["game_speed"] /= SPEED_BOOST_MULTIPLIER
         boost.real_model.remove_node()
         self.session["speed_boost"] = False
+
+    def dragon_boost(self, boost):
+        boost.real_model.reparentTo(self.ralph)
+        boost.real_model.setPos(0,0,5)
+        boost.real_model.setH(45)
+        boost.real_model.setScale(0.1)
+        self.session["score_boost"] = True
+        myTask = self.taskMgr.doMethodLater(SPEED_BOOST_TIME, self.stop_dragon_boost, 'stop_speed_boost', extraArgs = [boost], appendTask=True)
+    def stop_dragon_boost(self, boost, task):
+        boost.real_model.remove_node()
+        self.session["score_boost"] = False
 
     def start_immune(self, durration):
         self.session["player_immune"] = True
