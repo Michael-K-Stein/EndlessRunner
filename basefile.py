@@ -22,6 +22,7 @@ from panda3d.core import NodePath
 from panda3d.core import Camera
 from panda3d.core import OrthographicLens
 from panda3d.core import TransparencyAttrib
+from panda3d.core import AudioSound
 import random
 import math
 import sys
@@ -30,6 +31,8 @@ import numpy as np
 import cv2
 import threading
 import time
+import os
+
 
 # Global variables for the tunnel dimensions and speed of travel
 TUNNEL_SEGMENT_LENGTH = 50
@@ -37,7 +40,6 @@ TUNNEL_TIME = 2  # Amount of time for one segment to travel the
 # distance of TUNNEL_SEGMENT_LENGTH
 
 GAME_SPEED_ACCELERATION_INTERVAL_SECONDS = 2
-BIRDS_X_ACCELERATION = -0.2
 
 RALPH_START_X = 0
 RALPH_START_Y = -1
@@ -57,10 +59,14 @@ OBSTACLE_SPWN_DEPTH = -50
 
 FOG_EXPIRY_DENSITY = 0.045
 
-BIRD_DEFAULT_SPEED = 1.5
-BIRD_BASE_SCALE = 0.2
+MAX_GAME_SPEED = 0.5
+GAME_DEFAULT_SPEED = 0.150
+GAME_ACCELERATION = -0.003
 
-MAX_BIRDS_X_SPEED = 15
+BIRD_BASE_SCALE = 0.2
+BOX_BASE_SCALE = 0.07
+
+
 MAX_BACKGROUND_MUSIC_SPEED = 1.2
 
 BIRD_SPAWN_INTERVAL_SECONDS = 3
@@ -68,13 +74,26 @@ BIRD_SPAWN_INTERVAL_SECONDS = 3
 STARTING_OBJECTS_SPAWN_INTERVAL_SECONDS = 3
 PRIZE_REWARD = 777
 PRIZE_BASE_SCALE = 0.3
-PRIZE_CHANCE = 1000
+PRIZE_CHANCE = 700
+
+MUSIC_FILES_PATH = 'assets/music/'
 
 FOG_LUMINECENSE = 0.2
 
 # Pure magic
 MAGIC_RALPH_LOCATION_SCALE_FACTOR = 270
 MAGIC_POINT_THIRTY_FIVE = 0.35
+
+# For tunnel.py :)
+TUNNEL_VERAETIES_COUNT = 4  # THATS HOW ITS WRITTEN IDC WHAT YOU SAY
+TUNNEL_SCORE_TIME_MULTIPLE = 5000
+TUNNEL_TIME_MULTIPLIER = 15
+TUNNEL_MUSIC_DELAY = 7
+NIGHT_TUNNEL_TYPE = "night"
+TUNNEL_TYPES = ["day", "jungle", "modern"]
+STARTING_TUNNEL_TYPE = TUNNEL_TYPES[0]
+ALL_TUNNEL_TYPES = [STARTING_TUNNEL_TYPE, NIGHT_TUNNEL_TYPE, "jungle", "modern"]
+TUNNEL_TYPES_MUSIC = {}
 
 class ObsticleType(Enum):
     BIRD = 1,
